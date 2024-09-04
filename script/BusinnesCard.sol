@@ -22,8 +22,8 @@ contract BusinnesCard is ERC721 {
         require(companiesID[msg.sender].exists, "Only registered companies can execute this function");
         _;
     }
-    modifier senderNotHaveCard() {
-        require(!cards[msg.sender].exists, "There is already a card associated with your address");
+    modifier addressNotHaveCard(address _addr) {
+        require(!cards[_addr].exists, "There is already a card associated with your address");
         _;
     }
 
@@ -38,24 +38,23 @@ contract BusinnesCard is ERC721 {
     }
 
     mapping(address => Structs.FullInfoCard) cards;
-    // Evaluar la asignación de un id de empresa como valor y la inclusion de un map (IDEmpresa => Company) para evitar que la address
-    // de las empresas queden expuestas en las business card
+    
     mapping(address => Structs.CompID) companiesID;
     mapping(uint16 => Structs.Company) companies; 
 
     event CompanyCreated(address indexed companyAddress, uint16 companyID);
     
     // Esta funcion crea un perfil de empresa que queda vinculado uno a uno a la address del sender
-    function createCompany(Structs.CompanyInit memory initValues) public payable {
+    function createCompany(Structs.CompanyInit memory _initValues) public payable {
         require(!companiesID[msg.sender].exists, "Company already exists");
         require(msg.value >= feeCreateCompany, "Insufficient payment");
         /// Devolución de excedente (revisar)
         if (msg.value > feeCreateCompany) {
             payable(msg.sender).transfer(msg.value - feeCreateCompany);
         }
-        ///// Ver que hacer con los fondos ///////////////
+        /////TODO Ver que hacer con los fondos ///////////////
         Structs.Company memory newCompany = Structs.Company({
-            initValues: initValues,
+            initValues: _initValues,
             companyEmployees: 0,
             scoring: 0,
             verified: false
@@ -66,12 +65,12 @@ contract BusinnesCard is ERC721 {
         nextCompanyID ++;
     }
 
-    function createCardFor(Structs.CardDataInit memory _initValues, address _for) public onlyCompanies{    
-
+    function createCardFor(Structs.CardDataInit memory _initValues, address _for) public onlyCompanies addressNotHaveCard(_for){    
+        //TODO
     }
 
-    function createMyCard(Structs.CardDataInit memory initValues) public senderNotHaveCard{
-        
+    function createMyCard(Structs.CardDataInit memory _initValues) public addressNotHaveCard(msg.sender){
+        //TODO
 
     }
 
