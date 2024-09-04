@@ -19,7 +19,11 @@ contract BusinnesCard is ERC721 {
     }
 
     modifier onlyCompanies() {
-        require(companiesID[msg.sender].exists);
+        require(companiesID[msg.sender].exists, "Only registered companies can execute this function");
+        _;
+    }
+    modifier senderNotHaveCard() {
+        require(!cards[msg.sender].exists, "There is already a card associated with your address");
         _;
     }
 
@@ -66,8 +70,8 @@ contract BusinnesCard is ERC721 {
 
     }
 
-    function createMyCard(Structs.CardDataInit memory initValues) public {
-        require(!cards[msg.sender].exists, "There is already a card associated with your address");
+    function createMyCard(Structs.CardDataInit memory initValues) public senderNotHaveCard{
+        
 
     }
 
