@@ -3,21 +3,17 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "./Structs.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract BusinnesCard is ERC721 {
+import { FullInfoCard } from "./models/FullInfoCard.sol";
+import { CardDataInit } from "./models/CardDataInit.sol";
+
+contract BusinnesCard is ERC721, Ownable{
     address constant ZERO_ADDRESS = address(0);
-    address public owner;
 
-    constructor() ERC721("BusinessCard", "BC") {
-        owner = msg.sender;
-    }
+    constructor(string _name, string _symbol) ERC721(_name, _symbol) Ownable(msg.sender) { }
     //////////// Modificadores ///////////////
-    modifier onlyOwner() {
-        require(msg.sender == owner, "Only the owner can execute this function");
-        _;
-    }
-
+ 
     modifier onlyCompanies() {
         require(companiesID[msg.sender].exists, "Only registered companies can execute this function");
         _;
@@ -37,7 +33,7 @@ contract BusinnesCard is ERC721 {
         feeCreateCompany = _fee;
     }
 
-    mapping(address => Structs.FullInfoCard) cards;
+    mapping(address => FullInfoCard) cards;
     
     mapping(address => Structs.CompID) companiesID;
     mapping(uint16 => Structs.Company) companies; 
@@ -65,11 +61,11 @@ contract BusinnesCard is ERC721 {
         nextCompanyID ++;
     }
 
-    function createCardFor(Structs.CardDataInit memory _initValues, address _for) public onlyCompanies addressNotHaveCard(_for){    
+    function createCardFor(CardDataInit memory _initValues, address _for) public onlyCompanies addressNotHaveCard(_for){    
         //TODO
     }
 
-    function createMyCard(Structs.CardDataInit memory _initValues) public addressNotHaveCard(msg.sender){
+    function createMyCard(CardDataInit memory _initValues) public addressNotHaveCard(msg.sender){
         //TODO
 
     }
