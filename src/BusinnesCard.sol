@@ -5,13 +5,21 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import { FullInfoCard } from "./models/FullInfoCard.sol";
 import { CardDataInit } from "./models/CardDataInit.sol";
+import { FullInfoCard } from "./models/FullInfoCard.sol";
+import { PublicInfoCard } from "./models/PublicInfoCard.sol";
+import { PrivateInfoCard } from "./models/PrivateInfoCard.sol";
+
+import { CompanyInit } from "./models/CompanyInit.sol";
+import { Company } from "./models/Company.sol";
+import { CompID } from "./models/CompID.sol";
+
+import { Contact } from "./models/Contact.sol";
 
 contract BusinnesCard is ERC721, Ownable{
     address constant ZERO_ADDRESS = address(0);
 
-    constructor(string _name, string _symbol) ERC721(_name, _symbol) Ownable(msg.sender) { }
+    constructor(string memory _name, string memory  _symbol) ERC721(_name, _symbol) Ownable(msg.sender) { }
     //////////// Modificadores ///////////////
  
     modifier onlyCompanies() {
@@ -35,13 +43,13 @@ contract BusinnesCard is ERC721, Ownable{
 
     mapping(address => FullInfoCard) cards;
     
-    mapping(address => Structs.CompID) companiesID;
-    mapping(uint16 => Structs.Company) companies; 
+    mapping(address => CompID ) companiesID;
+    mapping(uint16 => Company) companies; 
 
     event CompanyCreated(address indexed companyAddress, uint16 companyID);
     
     // Esta funcion crea un perfil de empresa que queda vinculado uno a uno a la address del sender
-    function createCompany(Structs.CompanyInit memory _initValues) public payable {
+    function createCompany(CompanyInit memory _initValues) public payable {
         require(!companiesID[msg.sender].exists, "Company already exists");
         require(msg.value >= feeCreateCompany, "Insufficient payment");
         /// Devolución de excedente (revisar)
@@ -49,13 +57,13 @@ contract BusinnesCard is ERC721, Ownable{
             payable(msg.sender).transfer(msg.value - feeCreateCompany);
         }
         /////TODO Ver que hacer con los fondos ///////////////
-        Structs.Company memory newCompany = Structs.Company({
+        Company memory newCompany = Company({
             initValues: _initValues,
             companyEmployees: 0,
             scoring: 0,
             verified: false
         });
-        companiesID[msg.sender] = Structs.CompID({id: nextCompanyID, exists: true}); 
+        companiesID[msg.sender] = CompID({id: nextCompanyID, exists: true}); 
         companies[nextCompanyID] = newCompany;
         emit CompanyCreated(msg.sender, nextCompanyID);
         nextCompanyID ++;
