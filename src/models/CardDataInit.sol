@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 struct CardDataInit {
     string name;
     string email;
-    uint256 companyID;
+    uint16 companyID;
     string position;
     uint256 phone;
     string[] URLs; //Si no se proporcionan URL llega una lista vacia
