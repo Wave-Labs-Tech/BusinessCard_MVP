@@ -6,7 +6,7 @@ struct CardDataInit {
     string email;
     uint16 companyID;
     string position;
-    uint256 phone;
+    string phone;
     string[] URLs; //Si no se proporcionan URL llega una lista vacia
     // string photo; //Token URI ipfs
 }

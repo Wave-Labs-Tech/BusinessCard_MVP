@@ -8,7 +8,7 @@ struct CompanyInit {
     string companyEmail;
     string companyPhone;
     string companyIndustry; //cambiar por un enum con enumeraciones predefinidas
-    string companyFoundedYear;
+    uint16 companyFoundedYear;
     string companyCEO;
     string companyDescription;
 }

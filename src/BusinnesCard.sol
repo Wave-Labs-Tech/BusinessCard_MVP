@@ -9,13 +9,16 @@ import { Card } from "./models/Card.sol";
 import { PublicInfoCard } from "./models/PublicInfoCard.sol";
 import { PrivateInfoCard } from "./models/PrivateInfoCard.sol";
 
-import {CompanyInit } from "./models/CompanyInit.sol";
+import { CompanyInit } from "./models/CompanyInit.sol";
 import { Company } from "./models/Company.sol";
 import { ID } from "./models/ID.sol";
 
 import { Contact } from "./models/Contact.sol";
 
 contract BusinnesCard is ERC721, Ownable {
+    event CardCreated(address indexed owner, uint256 cardID, string name);
+    event CompanyCreated(address indexed companyAddress, uint16 companyID);
+
     address constant ZERO_ADDRESS = address(0);
 
     constructor(
@@ -26,17 +29,11 @@ contract BusinnesCard is ERC721, Ownable {
     //////////// Modificadores ///////////////
 
     modifier onlyCompanies() {
-        require(
-            companiesID[msg.sender].exists,
-            "Only registered companies can execute this function"
-        );
+        require(companiesID[msg.sender].exists, "Only registered companies");
         _;
     }
     modifier addressNotHaveCard(address _addr) {
-        require(
-            !cards[_addr].exists,
-            "There is already a card associated with your address"
-        );
+        require(!cards[_addr].exists, "Address already has Card");
         _;
     }
 
@@ -54,8 +51,6 @@ contract BusinnesCard is ERC721, Ownable {
 
     mapping(address => ID) companiesID;
     mapping(uint16 => Company) companies; //La clave es el campo id del struct ID relacionada a la address del owner de la Company en el mapping companiesID
-
-    event CompanyCreated(address indexed companyAddress, uint16 companyID);
 
     // Esta funcion crea un perfil de empresa que queda vinculado uno a uno a la address del sender
     function createCompany(CompanyInit memory _initValues) public payable {
@@ -75,7 +70,7 @@ contract BusinnesCard is ERC721, Ownable {
         companiesID[msg.sender] = ID({id: nextCompanyID, exists: true});
         companies[nextCompanyID] = newCompany;
         emit CompanyCreated(msg.sender, nextCompanyID);
-        nextCompanyID ++;
+        nextCompanyID++;
     }
 
     function createCardFor( CardDataInit memory _initValues, address _for ) public onlyCompanies addressNotHaveCard(_for) {
@@ -83,21 +78,22 @@ contract BusinnesCard is ERC721, Ownable {
         _safeCreateCard(_initValues, _for);
     }
 
-    function createMyCard(CardDataInit memory _initValues) public addressNotHaveCard(msg.sender) {
+    function createMyCard( CardDataInit memory _initValues ) public addressNotHaveCard(msg.sender) {
         _safeCreateCard(_initValues, msg.sender);
     }
 
-    function _safeCreateCard(CardDataInit memory _initValues, address to ) private {
+    function _safeCreateCard(CardDataInit memory _initValues, address to) private {
         Card memory newCard;
         newCard.privateInfo.email = _initValues.email;
         newCard.publicInfo.cardID = nextCardID;
         newCard.publicInfo.name = _initValues.name;
-        newCard.privateInfo.phone = _initValues.phone;  
+        newCard.privateInfo.phone = _initValues.phone;
         newCard.publicInfo.position = _initValues.position;
         newCard.publicInfo.URLs = _initValues.URLs;
-
         newCard.exists = true;
+
         cards[to] = newCard;
-        nextCardID ++;
+        emit CardCreated(to, newCard.publicInfo.cardID, newCard.publicInfo.name);
+        nextCardID++;
     }
 }
