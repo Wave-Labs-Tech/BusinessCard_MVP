@@ -39,14 +39,14 @@ contract BusinnesCard is ERC721, Ownable {
 
     //////////////////////////////////////////////
 
-    uint16 nextCompanyID = 1;
-    uint256 nextCardID = 1;
+    uint16 lastCompanyID;
+    uint256 lastCardID;
     uint256 feeCreateCompany;
 
     function setFeeCreateCompany(uint256 _fee) public onlyOwner {
         feeCreateCompany = _fee;
     }
-
+   
     mapping(address => Card) cards;
 
     mapping(address => ID) companiesID;
@@ -67,10 +67,19 @@ contract BusinnesCard is ERC721, Ownable {
             scoring: 0,
             verified: false
         });
-        companiesID[msg.sender] = ID({id: nextCompanyID, exists: true});
-        companies[nextCompanyID] = newCompany;
-        emit CompanyCreated(msg.sender, nextCompanyID);
-        nextCompanyID++;
+        lastCompanyID++;
+        companiesID[msg.sender] = ID({id: lastCompanyID, exists: true});
+        companies[lastCompanyID] = newCompany;
+        emit CompanyCreated(msg.sender, lastCompanyID);
+        
+    }
+
+    function getMyCompanyID() public view onlyCompanies returns(uint16) {
+        return companiesID[msg.sender].id;
+    }
+
+    function getCompanyName(uint16 id_) public view returns(string memory) {
+        return companies[id_].initValues.companyName;
     }
 
     function createCardFor( CardDataInit memory _initValues, address _for ) public onlyCompanies addressNotHaveCard(_for) {
@@ -83,9 +92,10 @@ contract BusinnesCard is ERC721, Ownable {
     }
 
     function _safeCreateCard(CardDataInit memory _initValues, address to) private {
+        lastCardID++;
         Card memory newCard;
         newCard.privateInfo.email = _initValues.email;
-        newCard.publicInfo.cardID = nextCardID;
+        newCard.publicInfo.cardID = lastCardID;
         newCard.publicInfo.name = _initValues.name;
         newCard.privateInfo.phone = _initValues.phone;
         newCard.publicInfo.position = _initValues.position;
@@ -94,6 +104,6 @@ contract BusinnesCard is ERC721, Ownable {
 
         cards[to] = newCard;
         emit CardCreated(to, newCard.publicInfo.cardID, newCard.publicInfo.name);
-        nextCardID++;
+        
     }
 }

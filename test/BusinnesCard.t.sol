@@ -56,25 +56,37 @@ contract BusinnesCardTest is Test {
         vm.stopPrank();
     }
 
+
     function testCreateCompany() public {
         // Simular como si 'companyOwner' enviara 1 ether al contrato
         vm.deal(companyAddress, 2 ether);  // Proveer fondos a companyOwner
         vm.prank(companyAddress);  // Hacer que companyOwner sea el msg.sender
+        string memory name = "TechCorp";
         
         CompanyInit memory companyInit = CompanyInit({
-            companyName: "TechCorp",
+            companyName: name,
             companyWebsite: "https://techcorp.com",
             companyLocation: "Av. San Martin 1234",
             companyEmail: "techcorp@info.com",
-            companyPhone: "+54226764738",
+            companyPhone: 54226764738,
             companyIndustry: "Infomatica", //cambiar por un enum con enumeraciones predefinidas
             companyFoundedYear: 2020,
             companyCEO: "Carlos Manuel Tech",
             companyDescription: "Empresa familiar de servicios informaticos"
-        });
-        
+        });   
         businessCard.createCompany{value: 1 ether}(companyInit); // Llamar a la función con 1 ether
+
+        vm.prank(companyAddress);
+        vm.expectRevert("Company already exists");
+        businessCard.createCompany{value: 1 ether}(companyInit);
+
+        vm.prank(companyAddress);
+        uint16 myCompanyID = businessCard.getMyCompanyID();
+        assertEq(myCompanyID, 1);
+        assertEq(businessCard.getCompanyName(myCompanyID), name);
     }
+
+    
 
 
 }
