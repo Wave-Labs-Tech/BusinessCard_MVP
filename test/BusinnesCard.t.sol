@@ -29,8 +29,7 @@ contract BusinnesCardTest is Test {
         vm.stopPrank();
     }
 
-    function testCreateCard() public {
-        vm.startPrank(aliceAddress);
+    function createCard() private {
         string[] memory urls;
         CardDataInit memory dataInit = CardDataInit({
             name: "Alice Lopez",
@@ -41,25 +40,19 @@ contract BusinnesCardTest is Test {
             URLs: urls
         });
         businessCard.createMyCard(dataInit);
+    }
+
+    function testCreateCard() public {
+        vm.startPrank(aliceAddress);
+        createCard();
         vm.stopPrank();
     }
 
     function testCreateOnlyOneCard() public {
         vm.startPrank(aliceAddress);
-        string[] memory urls;
-        CardDataInit memory dataInit = CardDataInit({
-            name: "Alice Lopez",
-            email: "alice_lopez@gmail.com",
-            companyID: 0,
-            position: "",
-            phone: "+1234123412",
-            URLs: urls
-        });
-        businessCard.createMyCard(dataInit);
-        vm.stopPrank();
-        vm.startPrank(aliceAddress);
+        createCard(); // crea la primera card card
         vm.expectRevert("Address already has Card");
-        businessCard.createMyCard(dataInit);
+        createCard(); // Se espera que falle al intentar crear una segunda card
         vm.stopPrank();
     }
 
