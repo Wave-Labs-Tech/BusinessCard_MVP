@@ -3,57 +3,67 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 import { CardDataInit } from "./models/CardDataInit.sol";
 import { Card } from "./models/Card.sol";
+import { Company } from "./models/Company.sol";
+import { CompanyInit } from "./models/CompanyInit.sol";
+import { Contact } from "./models/Contact.sol";
+import { ID } from "./models/ID.sol";
 import { PublicInfoCard } from "./models/PublicInfoCard.sol";
 import { PrivateInfoCard } from "./models/PrivateInfoCard.sol";
 
-import { CompanyInit } from "./models/CompanyInit.sol";
-import { Company } from "./models/Company.sol";
-import { ID } from "./models/ID.sol";
-
-import { Contact } from "./models/Contact.sol";
-
 contract BusinnesCard is ERC721, Ownable {
+
     event CardCreated(address indexed owner, uint256 cardID, string name);
     event CompanyCreated(address indexed companyAddress, uint16 companyID);
 
     address constant ZERO_ADDRESS = address(0);
 
-    constructor(
-        string memory _name,
-        string memory _symbol
-    ) ERC721(_name, _symbol) Ownable(msg.sender) {}
+    constructor() ERC721("Business Card", "BCARD") Ownable(msg.sender) { }
 
-    //////////// Modificadores ///////////////
+    //////////// Modifiers ///////////////
 
     modifier onlyCompanies() {
         require(companiesID[msg.sender].exists, "Only registered companies");
         _;
     }
-    modifier addressNotHaveCard(address _addr) {
-        require(!cards[_addr].exists, "Address already has Card");
+    modifier addressNotHaveCard(address addr_) {
+        require(!cards[addr_].exists, "Address already has Card");
         _;
     }
-
-    //////////////////////////////////////////////
 
     uint16 lastCompanyID;
     uint256 lastCardID;
     uint256 feeCreateCompany;
+   
+    mapping(address => Card) cards;
+    mapping(address => ID) companiesID;
+    mapping(uint16 => Company) companies; //La clave es el campo id del struct ID relacionada a la address del owner de la Company en el mapping companiesID
+
+    /////// Getters ////////////////////
+    function getMyCompanyID() public view onlyCompanies returns(uint16) {
+        return companiesID[msg.sender].id;
+    }
+
+    function getCompanyName(uint16 id_) public view returns(string memory) {
+        return companies[id_].initValues.companyName;
+    }
+
+    function getEmployedQty(uint16 id_) public view returns(uint16) {
+        return companies[id_].companyEmployees;
+    }
+    
+    function getMyCardId() public view returns(uint256){
+        return cards[msg.sender].publicInfo.cardID;
+    }
+    ////////////////////////////////////////////////////
 
     function setFeeCreateCompany(uint256 _fee) public onlyOwner {
         feeCreateCompany = _fee;
     }
-   
-    mapping(address => Card) cards;
-
-    mapping(address => ID) companiesID;
-    mapping(uint16 => Company) companies; //La clave es el campo id del struct ID relacionada a la address del owner de la Company en el mapping companiesID
 
     // Esta funcion crea un perfil de empresa que queda vinculado uno a uno a la address del sender
-    function createCompany(CompanyInit memory _initValues) public payable {
+    function createCompany(CompanyInit memory initValues_) public payable {
         require(!companiesID[msg.sender].exists, "Company already exists");
         require(msg.value >= feeCreateCompany, "Insufficient payment");
         /// Devolución de excedente (revisar)
@@ -62,7 +72,7 @@ contract BusinnesCard is ERC721, Ownable {
         }
         /////  Ver que hacer con los fondos ///////////////
         Company memory newCompany = Company({
-            initValues: _initValues,
+            initValues: initValues_,
             companyEmployees: 0,
             scoring: 0,
             verified: false
@@ -74,36 +84,29 @@ contract BusinnesCard is ERC721, Ownable {
         
     }
 
-    function getMyCompanyID() public view onlyCompanies returns(uint16) {
-        return companiesID[msg.sender].id;
+    function createCardFor( CardDataInit memory initValues_, address _for ) public onlyCompanies addressNotHaveCard(_for) {
+        initValues_.companyID = companiesID[msg.sender].id;
+        _safeCreateCard(initValues_, _for);
+        companies[initValues_.companyID].companyEmployees ++;
     }
+    
+    function createMyCard( CardDataInit memory initValues_ ) public addressNotHaveCard(msg.sender) {
+        _safeCreateCard(initValues_, msg.sender);
+    } 
 
-    function getCompanyName(uint16 id_) public view returns(string memory) {
-        return companies[id_].initValues.companyName;
-    }
-
-    function createCardFor( CardDataInit memory _initValues, address _for ) public onlyCompanies addressNotHaveCard(_for) {
-        _initValues.companyID = companiesID[msg.sender].id;
-        _safeCreateCard(_initValues, _for);
-    }
-
-    function createMyCard( CardDataInit memory _initValues ) public addressNotHaveCard(msg.sender) {
-        _safeCreateCard(_initValues, msg.sender);
-    }
-
-    function _safeCreateCard(CardDataInit memory _initValues, address to) private {
+    
+    function _safeCreateCard(CardDataInit memory initValues_, address to) private {
         lastCardID++;
         Card memory newCard;
-        newCard.privateInfo.email = _initValues.email;
+        newCard.privateInfo.email = initValues_.email;
         newCard.publicInfo.cardID = lastCardID;
-        newCard.publicInfo.name = _initValues.name;
-        newCard.privateInfo.phone = _initValues.phone;
-        newCard.publicInfo.position = _initValues.position;
-        newCard.publicInfo.URLs = _initValues.URLs;
+        newCard.publicInfo.name = initValues_.name;
+        newCard.privateInfo.phone = initValues_.phone;
+        newCard.publicInfo.position = initValues_.position;
+        newCard.publicInfo.URLs = initValues_.URLs;
         newCard.exists = true;
-
         cards[to] = newCard;
         emit CardCreated(to, newCard.publicInfo.cardID, newCard.publicInfo.name);
-        
     }
+
 }
