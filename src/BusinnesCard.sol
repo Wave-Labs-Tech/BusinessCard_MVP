@@ -16,6 +16,7 @@ contract BusinnesCard is ERC721, Ownable {
 
     event CardCreated(address indexed owner, uint256 cardID, string name);
     event CompanyCreated(address indexed companyAddress, uint16 companyID);
+    event SharedCard(address fromCard_, address indexed to_);
 
     address constant ZERO_ADDRESS = address(0);
 
@@ -39,6 +40,7 @@ contract BusinnesCard is ERC721, Ownable {
     mapping(address => Card) cards;
     mapping(address => ID) companiesID;
     mapping(uint16 => Company) companies; //La clave es el campo id del struct ID relacionada a la address del owner de la Company en el mapping companiesID
+    mapping(address => mapping(address => bool)) contacts; //
 
     /////// Getters ////////////////////
     function getMyCompanyID() public view onlyCompanies returns(uint16) {
@@ -92,9 +94,14 @@ contract BusinnesCard is ERC721, Ownable {
     
     function createMyCard( CardDataInit memory initValues_ ) public addressNotHaveCard(msg.sender) {
         _safeCreateCard(initValues_, msg.sender);
-    } 
+    }
 
-    
+    function shareMyCard(address to_) public {
+        assert(cards[msg.sender].exists);
+        contacts[msg.sender][to_] = true;
+        emit SharedCard(msg.sender, to_);
+    }
+
     function _safeCreateCard(CardDataInit memory initValues_, address to) private {
         lastCardID++;
         Card memory newCard;
@@ -108,5 +115,7 @@ contract BusinnesCard is ERC721, Ownable {
         cards[to] = newCard;
         emit CardCreated(to, newCard.publicInfo.cardID, newCard.publicInfo.name);
     }
+
+
 
 }

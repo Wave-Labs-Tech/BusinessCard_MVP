@@ -141,4 +141,11 @@ contract BusinnesCardTest is Test {
         vm.stopPrank();
         assertEq(businessCard.getEmployedQty(myCompanyID), 2);
     }
+
+    function testshareMyCard() public {
+        vm.startPrank(aliceAddress);
+        createCard();
+        businessCard.shareMyCard(employed1);
+
+    }
 }
