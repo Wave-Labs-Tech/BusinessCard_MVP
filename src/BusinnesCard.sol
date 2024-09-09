@@ -195,4 +195,13 @@ contract BusinnesCard is ERC721, Ownable {
         emit CardCreated(to, newCard.publicInfo.cardID, newCard.publicInfo.name);
     }
 
+    function readCard(address cardOwner) public view returns(Card memory) {
+        Card memory result = cards[cardOwner];
+        if(!contacts[cardOwner][msg.sender]){
+            result.privateInfo.phone = "";
+            result.privateInfo.email = "";
+        }
+        return result;
+    }
+
 }
