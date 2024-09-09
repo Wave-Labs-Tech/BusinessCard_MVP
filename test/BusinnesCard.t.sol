@@ -142,7 +142,7 @@ contract BusinnesCardTest is Test {
         assertEq(businessCard.getEmployedQty(myCompanyID), 2);
     }
 
-    function testShareMyCard() public {
+    function testShareMyCard_ReadCard() public {
         vm.prank(aliceAddress);
         createCard();
         vm.prank(aliceAddress);

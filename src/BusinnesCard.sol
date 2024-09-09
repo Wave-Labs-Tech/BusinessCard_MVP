@@ -195,6 +195,12 @@ contract BusinnesCard is ERC721, Ownable {
         emit CardCreated(to, newCard.publicInfo.cardID, newCard.publicInfo.name);
     }
 
+    /**
+     * @notice Retrieves the business card information of a given address.
+     * @dev If the caller is not a contact of the card owner, private information (phone and email) will be hidden.
+     * @param cardOwner The address of the card owner whose information will be retrieved.
+     * @return result A `Card` struct containing the public (and private, if applicable) information of the card owner.
+     */
     function readCard(address cardOwner) public view returns(Card memory) {
         Card memory result = cards[cardOwner];
         if(!contacts[cardOwner][msg.sender]){
