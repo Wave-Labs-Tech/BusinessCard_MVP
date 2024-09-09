@@ -2,6 +2,6 @@
 pragma solidity ^0.8.20;
 
 struct PrivateInfoCard {
-    string phone;
+    uint64 phone;
     string email;
 }

@@ -37,7 +37,7 @@ contract BusinnesCardTest is Test {
             email: "alice_lopez@gmail.com",
             companyID: 0,
             position: "",
-            phone: "+1234123412",
+            phone: 1234123412,
             URLs: urls
         });
         businessCard.createMyCard(dataInit);
@@ -106,7 +106,7 @@ contract BusinnesCardTest is Test {
             email: "empleado_1@gmail.com",
             companyID: myCompanyID,
             position: "Supervisor",
-            phone: "+1234123412",
+            phone: 1234123412,
             URLs: urls
         });
 
@@ -115,7 +115,7 @@ contract BusinnesCardTest is Test {
             email: "empleado_2@gmail.com",
             companyID: myCompanyID,
             position: "Arquitecto",
-            phone: "+13141592654",
+            phone: 3141592654,
             URLs: urls
         });
 
@@ -142,10 +142,14 @@ contract BusinnesCardTest is Test {
         assertEq(businessCard.getEmployedQty(myCompanyID), 2);
     }
 
-    function testshareMyCard() public {
-        vm.startPrank(aliceAddress);
+    function testShareMyCard() public {
+        vm.prank(aliceAddress);
         createCard();
+        vm.prank(aliceAddress);
         businessCard.shareMyCard(employed1);
-
+        vm.prank(employed2);
+        assertEq(businessCard.readCard(aliceAddress).privateInfo.phone, 0);
+        vm.prank(employed1);
+        assertEq(businessCard.readCard(aliceAddress).privateInfo.phone, 1234123412);
     }
 }
