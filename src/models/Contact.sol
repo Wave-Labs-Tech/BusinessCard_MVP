@@ -1,13 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
+import { ConnectionType } from "../enums/ConnectionType.sol";
 
-enum ConectionType {
-    Initial,
-    Professional,
-    Personal
-}
 struct Contact {
     uint256 timestamp;
     uint256 counterConnections;
-    ConectionType kind;
+    ConnectionType kind;
 }
