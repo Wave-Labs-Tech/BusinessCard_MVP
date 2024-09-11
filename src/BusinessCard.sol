@@ -17,7 +17,7 @@ import { PublicInfoCard } from "./models/PublicInfoCard.sol";
  * @dev This contract manages the creation and sharing of business cards and company profiles.
  * It allows companies to create business cards for employees and users to share their cards.
  */
-contract BusinnesCard is ERC721, Ownable {
+contract BusinessCard is ERC721, Ownable {
 
     /// @notice Emitted when a new business card is created.
     /// @param owner The address that owns the card.
@@ -65,7 +65,7 @@ contract BusinnesCard is ERC721, Ownable {
      * @dev Initializes the ERC721 contract with the token name "Business Card" and symbol "BCARD".
      */
     constructor() ERC721("Business Card", "BCARD") Ownable(msg.sender) { }
-    
+
     mapping(address => Card) cards;
     mapping(address => Id) companiesId;
     mapping(uint16 => Company) companies; // The key is the ID field from the ID struct related to the owner's address in companiesID

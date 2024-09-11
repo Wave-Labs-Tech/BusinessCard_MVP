@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "../lib/forge-std/src/Test.sol";
-import "../src/BusinnesCard.sol";
+import "../src/BusinessCard.sol";
 import {CardDataInit} from "../src/models/CardDataInit.sol";
 import {Card} from "../src/models/Card.sol";
 import {PublicInfoCard} from "../src/models/PublicInfoCard.sol";
@@ -15,7 +15,7 @@ import {Id} from "../src/models/Id.sol";
 import {Contact} from "../src/models/Contact.sol";
 
 contract BusinnesCardTest is Test {
-    BusinnesCard businessCard;
+    BusinessCard businessCard;
     address owner = address(0x1); // Owner inicial
     address aliceAddress = address(0x2); // Usuario para tests
     address companyAddress = address(0x3); // Dirección para crear una compañía
@@ -25,7 +25,7 @@ contract BusinnesCardTest is Test {
 
     function setUp() public {
         vm.startPrank(owner);
-        businessCard = new BusinnesCard();
+        businessCard = new BusinessCard();
         businessCard.setFeeCreateCompany(1 ether);
         vm.stopPrank();
     }
