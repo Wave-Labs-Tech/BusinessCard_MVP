@@ -66,10 +66,10 @@ contract BusinessCard is ERC721, Ownable {
      */
     constructor() ERC721("Business Card", "BCARD") Ownable(msg.sender) { }
 
-    mapping(address => Card) cards;
-    mapping(address => Id) companiesId;
-    mapping(uint16 => Company) companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
-    mapping(address => mapping(address => bool)) contacts; // Tracks if a card was shared with another address
+    mapping(address => Card) private cards;
+    mapping(address => Id) private companiesId;
+    mapping(uint16 => Company) private companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
+    mapping(address => mapping(address => bool)) private contacts; // Tracks if a card was shared with another address
 
     /////// Getters ////////////////////
 
