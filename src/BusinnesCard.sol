@@ -150,8 +150,8 @@ contract BusinnesCard is ERC721, Ownable {
      * @param _for The address for which the card is being created.
      */
     function createCardFor(CardDataInit memory initValues_, address _for) public onlyCompanies addressNotHaveCard(_for) {
-        // initValues_.companyId = companiesId[msg.sender].id;
-        _safeCreateCard(initValues_, _for, companiesId[msg.sender].id);
+        uint16 companyId = companiesId[msg.sender].id;
+        _safeCreateCard(initValues_, _for, companyId);
         companies[initValues_.companyId].companyEmployees++;
     }
 
@@ -161,7 +161,8 @@ contract BusinnesCard is ERC721, Ownable {
      * @param initValues_ The initial data for the business card.
      */
     function createMyCard(CardDataInit memory initValues_) public addressNotHaveCard(msg.sender) {
-        _safeCreateCard(initValues_, msg.sender, 0);
+        uint16 companyId = 0; //Not belonging to any company
+        _safeCreateCard(initValues_, msg.sender, companyId);
     }
 
     /**
@@ -180,14 +181,14 @@ contract BusinnesCard is ERC721, Ownable {
      * @param initValues_ The initial data for the business card.
      * @param to The address for which the card is being created.
      */
-    function _safeCreateCard(CardDataInit memory initValues_, address to, uint16 company) private {
+    function _safeCreateCard(CardDataInit memory initValues_, address to, uint16 companyId) private {
         lastCardId++;
         Card memory newCard;
         newCard.privateInfo.email = initValues_.email;
         newCard.publicInfo.cardId = lastCardId;
         newCard.publicInfo.name = initValues_.name;
         newCard.privateInfo.phone = initValues_.phone;
-        newCard.publicInfo.companyId = company;
+        newCard.publicInfo.companyId = companyId;
         newCard.publicInfo.position = initValues_.position;
         newCard.publicInfo.URLs = initValues_.URLs;
         newCard.exists = true;
