@@ -191,7 +191,7 @@ contract BusinessCard is ERC721, Ownable {
         newCard.privateInfo.phone = initValues_.phone;
         newCard.publicInfo.companyId = companyId;
         newCard.publicInfo.position = initValues_.position;
-        newCard.publicInfo.URLs = initValues_.URLs;
+        newCard.publicInfo.urls = initValues_.urls;
         newCard.exists = true;
         cards[to] = newCard;
         emit CardCreated(to, newCard.publicInfo.cardId, newCard.publicInfo.name);

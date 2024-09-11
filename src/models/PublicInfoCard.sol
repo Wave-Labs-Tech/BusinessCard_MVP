@@ -8,7 +8,7 @@ struct PublicInfoCard {
     string name;
     string photo; 
     string position;
-    string[] URLs;
+    string[] urls;
     uint256 score;
     uint256 numberOfContacts;
 }

@@ -38,7 +38,7 @@ contract BusinnesCardTest is Test {
             companyId: 0,
             position: "",
             phone: 1234123412,
-            URLs: urls
+            urls: urls
         });
         businessCard.createMyCard(dataInit);
     }
@@ -107,7 +107,7 @@ contract BusinnesCardTest is Test {
             companyId: myCompanyId,
             position: "Supervisor",
             phone: 1234123412,
-            URLs: urls
+            urls: urls
         });
 
         CardDataInit memory dataEmployed2 = CardDataInit({
@@ -116,7 +116,7 @@ contract BusinnesCardTest is Test {
             companyId: myCompanyId,
             position: "Arquitecto",
             phone: 3141592654,
-            URLs: urls
+            urls: urls
         });
 
         businessCard.createCardFor(dataEmployed1, employed1);
