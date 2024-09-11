@@ -3,8 +3,8 @@ pragma solidity ^0.8.20;
 
 // Struct de retorno para funciones de acceso a datos publicos
 struct PublicInfoCard {
-    uint256 cardID;
-    uint16 companyID;
+    uint256 cardId;
+    uint16 companyId;
     string name;
     string photo; 
     string position;

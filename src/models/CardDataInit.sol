@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 struct CardDataInit {
     uint64 phone;
-    uint16 companyID;
+    uint16 companyId;
     string name;
     string email;
     string position;

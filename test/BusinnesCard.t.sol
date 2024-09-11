@@ -10,7 +10,7 @@ import {PrivateInfoCard} from "../src/models/PrivateInfoCard.sol";
 
 import {CompanyInit} from "../src/models/CompanyInit.sol";
 import {Company} from "../src/models/Company.sol";
-import {ID} from "../src/models/ID.sol";
+import {Id} from "../src/models/Id.sol";
 
 import {Contact} from "../src/models/Contact.sol";
 
@@ -35,7 +35,7 @@ contract BusinnesCardTest is Test {
         CardDataInit memory dataInit = CardDataInit({
             name: "Alice Lopez",
             email: "alice_lopez@gmail.com",
-            companyID: 0,
+            companyId: 0,
             position: "",
             phone: 1234123412,
             URLs: urls
@@ -48,8 +48,8 @@ contract BusinnesCardTest is Test {
         createCard();
 
         vm.startPrank(aliceAddress);
-        uint256 cardID = businessCard.getMyCardId();
-        assertEq(cardID, 1);
+        uint256 cardId = businessCard.getMyCardId();
+        assertEq(cardId, 1);
         vm.stopPrank();
     }
 
@@ -84,9 +84,9 @@ contract BusinnesCardTest is Test {
         createCompany(companyName);
         vm.expectRevert("Company already exists");
         createCompany(companyName);
-        uint16 myCompanyID = businessCard.getMyCompanyID();
-        assertEq(myCompanyID, 1);
-        assertEq(businessCard.getCompanyName(myCompanyID), companyName);
+        uint16 myCompanyId = businessCard.getMyCompanyId();
+        assertEq(myCompanyId, 1);
+        assertEq(businessCard.getCompanyName(myCompanyId), companyName);
     }
 
     function testCreateCardForEmployed() public {
@@ -98,13 +98,13 @@ contract BusinnesCardTest is Test {
         createCompany(companyName);
         vm.deal(companyAddress, 2 ether); // Proveer fondos a companyOwner
         createCompany(companyName);
-        uint16 myCompanyID = businessCard.getMyCompanyID();
+        uint16 myCompanyId = businessCard.getMyCompanyId();
 
         string[] memory urls;
         CardDataInit memory dataEmployed1 = CardDataInit({
             name: "Empleado1",
             email: "empleado_1@gmail.com",
-            companyID: myCompanyID,
+            companyId: myCompanyId,
             position: "Supervisor",
             phone: 1234123412,
             URLs: urls
@@ -113,7 +113,7 @@ contract BusinnesCardTest is Test {
         CardDataInit memory dataEmployed2 = CardDataInit({
             name: "Empleado2",
             email: "empleado_2@gmail.com",
-            companyID: myCompanyID,
+            companyId: myCompanyId,
             position: "Arquitecto",
             phone: 3141592654,
             URLs: urls
@@ -131,15 +131,15 @@ contract BusinnesCardTest is Test {
         createCard();
 
         vm.prank(employed1);
-        uint256 cardID = businessCard.getMyCardId();
-        assertEq(cardID, 1);
+        uint256 cardId = businessCard.getMyCardId();
+        assertEq(cardId, 1);
 
         vm.prank(employed2);
-        cardID = businessCard.getMyCardId();
-        assertEq(cardID, 2);
+        cardId = businessCard.getMyCardId();
+        assertEq(cardId, 2);
 
         vm.stopPrank();
-        assertEq(businessCard.getEmployedQty(myCompanyID), 2);
+        assertEq(businessCard.getEmployedQty(myCompanyId), 2);
     }
 
     function testShareMyCard_ReadCard() public {

@@ -8,7 +8,7 @@ import { CardDataInit } from "./models/CardDataInit.sol";
 import { Company } from "./models/Company.sol";
 import { CompanyInit } from "./models/CompanyInit.sol";
 import { Contact } from "./models/Contact.sol";
-import { ID } from "./models/ID.sol";
+import { Id } from "./models/Id.sol";
 import { PrivateInfoCard } from "./models/PrivateInfoCard.sol";
 import { PublicInfoCard } from "./models/PublicInfoCard.sol";
 
@@ -49,7 +49,7 @@ contract BusinnesCard is ERC721, Ownable {
      * @dev Ensures that only registered companies can call certain functions.
      */
     modifier onlyCompanies() {
-        require(companiesID[msg.sender].exists, "Only registered companies");
+        require(companiesId[msg.sender].exists, "Only registered companies");
         _;
     }
 
@@ -62,12 +62,12 @@ contract BusinnesCard is ERC721, Ownable {
         _;
     }
 
-    uint16 lastCompanyID;
-    uint256 lastCardID;
+    uint16 lastCompanyId;
+    uint256 lastCardId;
     uint256 feeCreateCompany;
 
     mapping(address => Card) cards;
-    mapping(address => ID) companiesID;
+    mapping(address => Id) companiesId;
     mapping(uint16 => Company) companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
     mapping(address => mapping(address => bool)) contacts; // Tracks if a card was shared with another address
 
@@ -78,8 +78,8 @@ contract BusinnesCard is ERC721, Ownable {
      * @dev Only callable by registered companies.
      * @return The ID of the sender's company.
      */
-    function getMyCompanyID() public view onlyCompanies returns(uint16) {
-        return companiesID[msg.sender].id;
+    function getMyCompanyId() public view onlyCompanies returns(uint16) {
+        return companiesId[msg.sender].id;
     }
 
     /**
@@ -105,7 +105,7 @@ contract BusinnesCard is ERC721, Ownable {
      * @return The ID of the sender's card.
      */
     function getMyCardId() public view returns(uint256){
-        return cards[msg.sender].publicInfo.cardID;
+        return cards[msg.sender].publicInfo.cardId;
     }
 
     ////////////////////////////////////////////////////
@@ -125,7 +125,7 @@ contract BusinnesCard is ERC721, Ownable {
      * @param initValues_ The initial data for the company.
      */
     function createCompany(CompanyInit memory initValues_) public payable {
-        require(!companiesID[msg.sender].exists, "Company already exists");
+        require(!companiesId[msg.sender].exists, "Company already exists");
         require(msg.value >= feeCreateCompany, "Insufficient payment");
         /// Refund excess payment if any
         if (msg.value > feeCreateCompany) {
@@ -138,10 +138,10 @@ contract BusinnesCard is ERC721, Ownable {
             scoring: 0,
             verified: false
         });
-        lastCompanyID++;
-        companiesID[msg.sender] = ID({id: lastCompanyID, exists: true});
-        companies[lastCompanyID] = newCompany;
-        emit CompanyCreated(msg.sender, lastCompanyID);
+        lastCompanyId++;
+        companiesId[msg.sender] = Id({id: lastCompanyId, exists: true});
+        companies[lastCompanyId] = newCompany;
+        emit CompanyCreated(msg.sender, lastCompanyId);
     }
 
     /**
@@ -151,9 +151,9 @@ contract BusinnesCard is ERC721, Ownable {
      * @param _for The address for which the card is being created.
      */
     function createCardFor(CardDataInit memory initValues_, address _for) public onlyCompanies addressNotHaveCard(_for) {
-        initValues_.companyID = companiesID[msg.sender].id;
+        initValues_.companyId = companiesId[msg.sender].id;
         _safeCreateCard(initValues_, _for);
-        companies[initValues_.companyID].companyEmployees++;
+        companies[initValues_.companyId].companyEmployees++;
     }
 
     /**
@@ -182,17 +182,17 @@ contract BusinnesCard is ERC721, Ownable {
      * @param to The address for which the card is being created.
      */
     function _safeCreateCard(CardDataInit memory initValues_, address to) private {
-        lastCardID++;
+        lastCardId++;
         Card memory newCard;
         newCard.privateInfo.email = initValues_.email;
-        newCard.publicInfo.cardID = lastCardID;
+        newCard.publicInfo.cardId = lastCardId;
         newCard.publicInfo.name = initValues_.name;
         newCard.privateInfo.phone = initValues_.phone;
         newCard.publicInfo.position = initValues_.position;
         newCard.publicInfo.URLs = initValues_.URLs;
         newCard.exists = true;
         cards[to] = newCard;
-        emit CardCreated(to, newCard.publicInfo.cardID, newCard.publicInfo.name);
+        emit CardCreated(to, newCard.publicInfo.cardId, newCard.publicInfo.name);
     }
 
     /**
