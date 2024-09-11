@@ -147,11 +147,11 @@ contract BusinnesCard is ERC721, Ownable {
      * @notice Create a new business card for an address.
      * @dev Only callable by registered companies. The address must not already have a card.
      * @param initValues_ The initial data for the business card.
-     * @param _for The address for which the card is being created.
+     * @param for_ The address for which the card is being created.
      */
-    function createCardFor(CardDataInit memory initValues_, address _for) public onlyCompanies addressNotHaveCard(_for) {
+    function createCardFor(CardDataInit memory initValues_, address for_) public onlyCompanies addressNotHaveCard(for_) {
         uint16 companyId = companiesId[msg.sender].id;
-        _safeCreateCard(initValues_, _for, companyId);
+        _safeCreateCard(initValues_, for_, companyId);
         companies[initValues_.companyId].companyEmployees++;
     }
 
