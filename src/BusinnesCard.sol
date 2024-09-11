@@ -36,6 +36,9 @@ contract BusinnesCard is ERC721, Ownable {
     event SharedCard(address fromCard_, address indexed to_);
 
     address constant ZERO_ADDRESS = address(0);
+    uint16 lastCompanyId;
+    uint256 lastCardId;
+    uint256 feeCreateCompany;
 
     /**
      * @notice Constructor for the Business Card contract.
@@ -61,10 +64,6 @@ contract BusinnesCard is ERC721, Ownable {
         require(!cards[addr_].exists, "Address already has Card");
         _;
     }
-
-    uint16 lastCompanyId;
-    uint256 lastCardId;
-    uint256 feeCreateCompany;
 
     mapping(address => Card) cards;
     mapping(address => Id) companiesId;
@@ -151,8 +150,8 @@ contract BusinnesCard is ERC721, Ownable {
      * @param _for The address for which the card is being created.
      */
     function createCardFor(CardDataInit memory initValues_, address _for) public onlyCompanies addressNotHaveCard(_for) {
-        initValues_.companyId = companiesId[msg.sender].id;
-        _safeCreateCard(initValues_, _for);
+        // initValues_.companyId = companiesId[msg.sender].id;
+        _safeCreateCard(initValues_, _for, companiesId[msg.sender].id);
         companies[initValues_.companyId].companyEmployees++;
     }
 
@@ -162,7 +161,7 @@ contract BusinnesCard is ERC721, Ownable {
      * @param initValues_ The initial data for the business card.
      */
     function createMyCard(CardDataInit memory initValues_) public addressNotHaveCard(msg.sender) {
-        _safeCreateCard(initValues_, msg.sender);
+        _safeCreateCard(initValues_, msg.sender, 0);
     }
 
     /**
@@ -181,13 +180,14 @@ contract BusinnesCard is ERC721, Ownable {
      * @param initValues_ The initial data for the business card.
      * @param to The address for which the card is being created.
      */
-    function _safeCreateCard(CardDataInit memory initValues_, address to) private {
+    function _safeCreateCard(CardDataInit memory initValues_, address to, uint16 company) private {
         lastCardId++;
         Card memory newCard;
         newCard.privateInfo.email = initValues_.email;
         newCard.publicInfo.cardId = lastCardId;
         newCard.publicInfo.name = initValues_.name;
         newCard.privateInfo.phone = initValues_.phone;
+        newCard.publicInfo.companyId = company;
         newCard.publicInfo.position = initValues_.position;
         newCard.publicInfo.URLs = initValues_.URLs;
         newCard.exists = true;
