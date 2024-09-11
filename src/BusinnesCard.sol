@@ -40,11 +40,6 @@ contract BusinnesCard is ERC721, Ownable {
     uint256 lastCardId;
     uint256 feeCreateCompany;
 
-    /**
-     * @notice Constructor for the Business Card contract.
-     * @dev Initializes the ERC721 contract with the token name "Business Card" and symbol "BCARD".
-     */
-    constructor() ERC721("Business Card", "BCARD") Ownable(msg.sender) { }
 
     //////////// Modifiers ///////////////
 
@@ -65,6 +60,12 @@ contract BusinnesCard is ERC721, Ownable {
         _;
     }
 
+    /**
+     * @notice Constructor for the Business Card contract.
+     * @dev Initializes the ERC721 contract with the token name "Business Card" and symbol "BCARD".
+     */
+    constructor() ERC721("Business Card", "BCARD") Ownable(msg.sender) { }
+    
     mapping(address => Card) cards;
     mapping(address => Id) companiesId;
     mapping(uint16 => Company) companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
