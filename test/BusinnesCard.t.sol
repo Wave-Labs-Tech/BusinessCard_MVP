@@ -70,7 +70,7 @@ contract BusinnesCardTest is Test {
             companyPhone: 54226764738,
             companyIndustry: "Infomatica", //cambiar por un enum con enumeraciones predefinidas
             companyFoundedYear: 2020,
-            companyCEO: "Carlos Manuel Tech",
+            companyCeo: "Carlos Manuel Tech",
             companyDescription: "Empresa familiar de servicios informaticos"
         });
         businessCard.createCompany{value: 1 ether}(companyInit); // Llamar a la función con 1 ether

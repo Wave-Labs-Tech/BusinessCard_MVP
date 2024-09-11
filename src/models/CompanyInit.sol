@@ -9,6 +9,6 @@ struct CompanyInit {
     string companyWebsite;
     string companyEmail;
     string companyIndustry; //cambiar por un enum con enumeraciones predefinidas
-    string companyCEO;
+    string companyCeo;
     string companyDescription;
 }
