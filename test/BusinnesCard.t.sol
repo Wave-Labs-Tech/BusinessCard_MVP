@@ -35,7 +35,6 @@ contract BusinnesCardTest is Test {
         CardDataInit memory dataInit = CardDataInit({
             name: "Alice Lopez",
             email: "alice_lopez@gmail.com",
-            companyId: 0,
             position: "",
             phone: 1234123412,
             urls: urls
@@ -104,7 +103,6 @@ contract BusinnesCardTest is Test {
         CardDataInit memory dataEmployed1 = CardDataInit({
             name: "Empleado1",
             email: "empleado_1@gmail.com",
-            companyId: myCompanyId,
             position: "Supervisor",
             phone: 1234123412,
             urls: urls
@@ -113,7 +111,6 @@ contract BusinnesCardTest is Test {
         CardDataInit memory dataEmployed2 = CardDataInit({
             name: "Empleado2",
             email: "empleado_2@gmail.com",
-            companyId: myCompanyId,
             position: "Arquitecto",
             phone: 3141592654,
             urls: urls
