@@ -168,7 +168,7 @@ contract BusinessCard is ERC721, Ownable {
     function createCardFor(CardDataInit memory initValues_, address for_) public onlyCompanies addressNotHaveCard(for_) {
         uint16 companyId = companiesId[msg.sender].id;
         _safeCreateCard(initValues_, for_, companyId);
-        companies[initValues_.companyId].companyEmployees++;
+        companies[companyId].companyEmployees++;
     }
 
     /**
