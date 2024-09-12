@@ -19,6 +19,13 @@ import { PublicInfoCard } from "./models/PublicInfoCard.sol";
  */
 contract BusinessCard is ERC721, Ownable {
 
+    /**
+    * @notice Error thrown when a card does not exist for a given address.
+    * @dev This error is used to indicate that the card associated with the specified address could not be found.
+    * @param user The address for which the card was expected to exist but does not.
+    */
+    error CardDoesNotExist(address user);
+
     /// @notice Emitted when a new business card is created.
     /// @param owner The address that owns the card.
     /// @param cardID The unique ID of the created card.
@@ -31,25 +38,30 @@ contract BusinessCard is ERC721, Ownable {
     event CompanyCreated(address indexed companyAddress, uint16 companyID);
 
     /// @notice Emitted when a business card is shared with another user.
+    /// @param from_ The address that shares their card.
+    /// @param to_ The address that receives the shared card.
+    event newConnection(address indexed from_, address indexed to_);
+
+    /// @notice Emitted when a business card is shared with another user.
     /// @param fromCard_ The address that shares their card.
     /// @param to_ The address that receives the shared card.
     event SharedCard(address fromCard_, address indexed to_);
 
-    address constant ZERO_ADDRESS = address(0);
-    uint16 lastCompanyId;
-    uint256 lastCardId;
-    uint256 feeCreateCompany;
+    // Attributes
+
+    address public constant ZERO_ADDRESS = address(0);
+    uint16 private _lastCompanyId;
+    uint256 private _lastCardId;
+    uint256 private _feeCreateCompany;
+
+    mapping(address => Card) private cards;
+    mapping(address => mapping(address => uint256)) public connectionCounter;
+    mapping(address => Id) private companiesId;
+    mapping(uint16 => Company) private companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
+    mapping(address => mapping(address => bool)) private contacts; // Tracks if a card was shared with another address
 
 
-    //////////// Modifiers ///////////////
-
-    /**
-     * @dev Ensures that only registered companies can call certain functions.
-     */
-    modifier onlyCompanies() {
-        require(companiesId[msg.sender].exists, "Only registered companies");
-        _;
-    }
+    //////////// Modifiers ///////////////    
 
     /**
      * @dev Ensures that the provided address does not already have a business card.
@@ -61,15 +73,18 @@ contract BusinessCard is ERC721, Ownable {
     }
 
     /**
+     * @dev Ensures that only registered companies can call certain functions.
+     */
+    modifier onlyCompanies() {
+        require(companiesId[msg.sender].exists, "Only registered companies");
+        _;
+    }
+
+    /**
      * @notice Constructor for the Business Card contract.
      * @dev Initializes the ERC721 contract with the token name "Business Card" and symbol "BCARD".
      */
     constructor() ERC721("Business Card", "BCARD") Ownable(msg.sender) { }
-
-    mapping(address => Card) private cards;
-    mapping(address => Id) private companiesId;
-    mapping(uint16 => Company) private companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
-    mapping(address => mapping(address => bool)) private contacts; // Tracks if a card was shared with another address
 
     /////// Getters ////////////////////
 
@@ -104,7 +119,7 @@ contract BusinessCard is ERC721, Ownable {
      * @notice Get the ID of the card owned by the sender.
      * @return The ID of the sender's card.
      */
-    function getMyCardId() public view returns(uint256){
+    function getMyCardId() public view returns(uint256) {
         return cards[msg.sender].publicInfo.cardId;
     }
 
@@ -116,7 +131,7 @@ contract BusinessCard is ERC721, Ownable {
      * @param _fee The new fee amount in wei.
      */
     function setFeeCreateCompany(uint256 _fee) public onlyOwner {
-        feeCreateCompany = _fee;
+        _feeCreateCompany = _fee;
     }
 
     /**
@@ -126,10 +141,10 @@ contract BusinessCard is ERC721, Ownable {
      */
     function createCompany(CompanyInit memory initValues_) public payable {
         require(!companiesId[msg.sender].exists, "Company already exists");
-        require(msg.value >= feeCreateCompany, "Insufficient payment");
+        require(msg.value >= _feeCreateCompany, "Insufficient payment");
         /// Refund excess payment if any
-        if (msg.value > feeCreateCompany) {
-            payable(msg.sender).transfer(msg.value - feeCreateCompany);
+        if (msg.value > _feeCreateCompany) {
+            payable(msg.sender).transfer(msg.value - _feeCreateCompany);
         }
         ///// Process funds (decide what to do with the collected funds)
         Company memory newCompany = Company({
@@ -138,10 +153,10 @@ contract BusinessCard is ERC721, Ownable {
             scoring: 0,
             verified: false
         });
-        lastCompanyId++;
-        companiesId[msg.sender] = Id({id: lastCompanyId, exists: true});
-        companies[lastCompanyId] = newCompany;
-        emit CompanyCreated(msg.sender, lastCompanyId);
+        _lastCompanyId++;
+        companiesId[msg.sender] = Id({id: _lastCompanyId, exists: true});
+        companies[_lastCompanyId] = newCompany;
+        emit CompanyCreated(msg.sender, _lastCompanyId);
     }
 
     /**
@@ -183,10 +198,10 @@ contract BusinessCard is ERC721, Ownable {
      * @param to The address for which the card is being created.
      */
     function _safeCreateCard(CardDataInit memory initValues_, address to, uint16 companyId) private {
-        lastCardId++;
+        _lastCardId++;
         Card memory newCard;
         newCard.privateInfo.email = initValues_.email;
-        newCard.publicInfo.cardId = lastCardId;
+        newCard.publicInfo.cardId = _lastCardId;
         newCard.publicInfo.name = initValues_.name;
         newCard.privateInfo.phone = initValues_.phone;
         newCard.publicInfo.companyId = companyId;
@@ -210,6 +225,62 @@ contract BusinessCard is ERC721, Ownable {
             result.privateInfo.email = "";
         }
         return result;
+    }
+
+    /**
+    * @notice Updates the details of an existing business card.
+    * @dev The function checks if the user's card exists before making updates. 
+    * If the card does not exist, a custom error is thrown.
+    * @param email_ The new email address to update.
+    * @param phone_ The new phone number to update.
+    * @param position_ The new job position to update.
+    * @param urls_ The new public URLs to update.
+    */
+    function updateCard(string memory email_, uint64 phone_, string memory position_, string[] memory urls_) public {
+        _existCard(msg.sender);
+        Card storage card = cards[msg.sender];
+        card.privateInfo.email = email_;
+        card.privateInfo.phone = phone_;
+        card.publicInfo.position = position_;
+        card.publicInfo.urls = urls_;
+    }
+
+    /**
+    * @notice Creates a connection between the caller and the specified address.
+    * @dev The function checks that both the caller and the specified address have valid cards.
+    * It then increments the connection count between them and emits a `newConnection` event.
+    * @param to_ The address with which the caller wants to create a connection.
+    */
+    function createConnection(address to_) public {
+        _existCard(msg.sender);
+        _existCard(to_);
+        uint256 connection = getConnection(msg.sender, to_);
+        connectionCounter[msg.sender][to_] = connection + 1;
+        emit newConnection(msg.sender, to_);
+    }
+
+    /**
+    * @notice Retrieves the connection count between two addresses.
+    * @dev This function returns the number of connections between the `from_` address and the `to_` address.
+    * It is a view function and does not modify the state.
+    * @param from_ The address of the initiator of the connection.
+    * @param to_ The address of the recipient of the connection.
+    * @return connectionsNumber between the `from_` and `to_` addresses.
+    */
+    function getConnection(address from_, address to_) public view returns(uint256) {
+        return connectionCounter[from_][to_];
+    }
+
+    /**
+    * @notice Checks if a card exists for the given address.
+    * @dev This function verifies whether a card associated with `owner_` exists.
+    * If the card does not exist, it reverts with a `CardDoesNotExist` error.
+    * @param owner_ The address of the card owner to check.
+    */
+    function _existCard(address owner_) public view {
+        if (!cards[owner_].exists) {
+            revert CardDoesNotExist(owner_);
+        }
     }
 
 }
