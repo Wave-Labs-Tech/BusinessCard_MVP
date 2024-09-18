@@ -88,6 +88,20 @@ contract BusinnesCardTest is Test {
         assertEq(businessCard.getCompanyName(myCompanyId), companyName);
     }
 
+    function testCreateCompanyAndCard() public {
+        // Simular como si 'companyOwner' enviara 1 ether al contrato
+        string memory companyName = "TechCorp";
+        vm.deal(companyAddress, 2 ether); // Proveer fondos a companyOwner
+        vm.startPrank(companyAddress); // Hacer que companyOwner sea el msg.sender
+        createCompany(companyName);
+        vm.expectRevert("Company already exists");
+        createCompany(companyName);
+        uint16 myCompanyId = businessCard.getMyCompanyId();
+        assertEq(myCompanyId, 1);
+        assertEq(businessCard.getCompanyName(myCompanyId), companyName);
+        createCard();
+    }
+
     function testCreateCardForEmployed() public {
 
         string memory companyName = "TechCorp";
