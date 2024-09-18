@@ -7,6 +7,8 @@ import { CHAIN_NAMESPACES, IProvider, WEB3AUTH_NETWORK } from "@web3auth/base";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 import './globals.css';
 import { Contract, ethers, JsonRpcProvider, Provider, Signer, Wallet } from "ethers";
+import { businessCardABI } from "./assets/abis/businessCardABI";
+import { CONTRACT_ADDRESS } from "./assets/constants/index";
 
 import { uploadJSONToIPFS, uploadFileToIPFS } from "./utils/Pinata";
 import { useRouter } from 'next/navigation';
@@ -57,6 +59,7 @@ function App() {
   // const [provider, setProvider] = useState<IProvider | null>(null);
   const [provider, setProvider] = useState<Provider | null>(null);
   const [signer, setSigner] = useState<Signer | null>(null);
+  const [contract, setContract] = useState<Contract | null>(null);
   const [web3authProvider, setWeb3authProvider] = useState<IProvider | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -180,12 +183,12 @@ function App() {
           // console.log("USER", user);
           // setUser(user);
 
-          const w3aProvider: ethers.BrowserProvider = new ethers.BrowserProvider(
-            web3auth.provider
-          );
+          // const w3aProvider: ethers.BrowserProvider = new ethers.BrowserProvider(
+          //   web3auth.provider
+          // );
           // console.log("w3aProvider", w3aProvider);
 
-          const w3aSigner: ethers.JsonRpcSigner = await w3aProvider.getSigner();
+          // const w3aSigner: ethers.JsonRpcSigner = await w3aProvider.getSigner();
           // setWeb3authSigner(w3aSigner);
           // console.log("w3aSigner", w3aSigner);
           // console.log("Web3authProvider", web3authProvider);
@@ -229,11 +232,11 @@ function App() {
           setSigner(signer);
           console.log("Signer APP", signer);
           
-          // const initContract = new Contract(CONTRACT_ADDRESS, abi, signer);
+          // const initContract = new Contract(CONTRACT_ADDRESS, businessCardABI, signer);
           ////////////////////BORRAR; ES PARA PRUEBAS LOCALES CON ANVIL SOLO///////////////
-          // const initContract = new Contract("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", abi, signer);
+          const initContract = new Contract("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", businessCardABI, signer);
           //////////////////////////////////
-          // setContract(initContract);
+          setContract(initContract);
           // console.log("ContractAPP", initContract);
 
           
@@ -294,8 +297,8 @@ function App() {
     }
 }
 
-async function listNFT(e: React.FormEvent<HTMLButtonElement>) {
-    console.log("listNFT called");
+async function mintCard(e: React.FormEvent<HTMLButtonElement>) {
+    console.log("Minting card");
     e.preventDefault();
 
     //Upload data to IPFS
@@ -309,17 +312,16 @@ async function listNFT(e: React.FormEvent<HTMLButtonElement>) {
         // disableButton();
         updateMessage("Uploading NFT(takes 5 mins).. please dont click anything!");
 
-        //Pull the deployed contract instance
-        // let contract = new ethers.Contract(Marketplace.address, Marketplace.abi, signer);
-
         //massage the params to be sent to the create NFT request
         // const price = ethers.parseUnits(formParams.price, 'ether');
         // let listingPrice = await contract.getListPrice();
         // listingPrice = listingPrice.toString();
 
-        //actually create the NFT
-        // let transaction = await contract.createToken(metadataURL, price, { value: listingPrice });
-        // await transaction.wait();
+        //actually create the Card
+        if (contract){
+          // let transaction = await contract.createToken(metadataURL, price, { value: listingPrice });
+          // await transaction.wait();
+        }
 
         alert("Successfully listed your NFT!");
         // enableButton();
