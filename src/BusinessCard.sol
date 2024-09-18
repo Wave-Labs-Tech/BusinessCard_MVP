@@ -91,6 +91,10 @@ contract BusinessCard is ERC721, Ownable {
         return companies[id_].initValues.companyName;
     }
 
+    function getMyCompany() public view returns(Company memory) {
+        return companies[companiesId[msg.sender].id];
+    }
+
     /**
      * @notice Get the number of employees in a company by its ID.
      * @param id_ The ID of the company.
