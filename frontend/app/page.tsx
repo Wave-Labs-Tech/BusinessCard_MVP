@@ -9,6 +9,7 @@ import './globals.css';
 import { Contract, ethers, JsonRpcProvider, Provider, Signer, Wallet } from "ethers";
 import { businessCardABI } from "./assets/abis/businessCardABI";
 import { CONTRACT_ADDRESS } from "./assets/constants/index";
+import  CardForm  from "./components/CardForm";
 
 import { uploadJSONToIPFS, uploadFileToIPFS } from "./utils/Pinata";
 import { useRouter } from 'next/navigation';
@@ -23,6 +24,12 @@ import RPC from "./ethersRPC";
 // import RPC from "./viemRPC";
 // import RPC from "./web3RPC";
 // IMP END - Blockchain Calls
+
+interface CardData {
+  name: string;
+  position: string;
+  urls: string;
+}
 
 // IMP START - Dashboard Registration
 const clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ"; // get from https://dashboard.web3auth.io
@@ -64,24 +71,123 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [formParams, updateFormParams] = useState({ name: '', position: '', urls: ''});
   const [message, updateMessage] = useState('');
-  const [formParams, updateFormParams] = useState({ name: '', cargo: '', descripcion: '', telefono: '+', email: ''});
   const [fileURL, setFileURL] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
   const [] = useState();
-
+  const [cardId, setCardId] = useState<number | null>(null);
+  const [companyId, setCompanyId] = useState<number| null>(null);
 
   useEffect(() => {
     const init = async () => {
       try {
         // IMP START - SDK Initialization
-        await web3auth.initModal();
-        // IMP END - SDK Initialization
-        // setProvider(web3auth.provider);
-
-        if (web3auth.connected) {
-          setLoggedIn(true);
+        // Verificar si el web3auth ya está conectado
+        if (!web3auth.connected && !web3auth.provider) {
+          await web3auth.initModal();
+          // setWeb3authProvider(web3auth.provider);
         }
+        // Verificar si provider está inicializado
+        if (web3auth.provider) {
+          // setWeb3authProvider(web3auth.provider);
+          // const user: Partial<UserInfo> = await web3auth.getUserInfo();
+          // console.log("USER", user);
+          // setUser(user);
+
+          // const w3aProvider: ethers.BrowserProvider = new ethers.BrowserProvider(
+          //   web3auth.provider
+          // );
+          // console.log("w3aProvider", w3aProvider);
+
+          // const w3aSigner: ethers.JsonRpcSigner = await w3aProvider.getSigner();
+          // setWeb3authSigner(w3aSigner);
+          // console.log("w3aSigner", w3aSigner);
+          // console.log("Web3authProvider", web3authProvider);
+
+          // const web3 = new Web3(web3auth.provider as any);
+          // console.log("web3", web3);
+;
+          // let initAddress: any = await web3.eth.getAccounts();
+          // initAddress = initAddress[0];
+
+          // console.log("initAddress", initAddress);
+          // setAddress(initAddress);
+
+          if (web3auth.connected) {
+            setLoggedIn(true);
+          }
+
+          // const provider: JsonRpcProvider = new JsonRpcProvider(
+          //   process.env.REACT_APP_ARBITRUM_SEPOLIA_RPC_URL
+          // );
+          ////////////////////BORRAR; ES PARA PRUEBAS LOCALES CON ANVIL SOLO///////////////
+          // const provider: JsonRpcProvider = new JsonRpcProvider('http://localhost:8545');
+          const provider: JsonRpcProvider = new JsonRpcProvider('http://localhost:8545', {
+            chainId: 31337,
+            name: 'anvil'
+          });
+          provider? setProvider(provider) : setProvider(null);
+          console.log("APP provider", provider);
+          //////////////////////////////////
+          // const signer: ethers.Wallet = new Wallet(
+          //   process.env.REACT_APP_WALLET_PRIVATE_KEY || "",
+          //   provider
+          // );
+          ////////////////////BORRAR; ES PARA PRUEBAS LOCALES CON ANVIL SOLO///////////////
+          setAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
+          const signer: ethers.Wallet = new Wallet(
+            "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+            provider
+          );
+          //////////////////////////////////
+          setSigner(signer);
+          console.log("Signer APP", signer);
+          
+          // const initContract = new Contract(CONTRACT_ADDRESS, businessCardABI, signer);
+          ////////////////////BORRAR; ES PARA PRUEBAS LOCALES CON ANVIL SOLO///////////////
+          const initContract = new Contract("0x5FbDB2315678afecb367f032d93F642f64180aa3", businessCardABI, signer);
+          //////////////////////////////////
+          setContract(initContract);
+          // console.log("ContractAPP", initContract);
+          
+          console.log("initContract", initContract);
+          try{
+            const blockNumber = await provider.getBlockNumber();
+            console.log("Current block number:", blockNumber);
+            const cardId = await initContract._lastCardId();
+            console.log("cardId", cardId);
+            // setCardId(parseInt(cardId.toString()));
+            setCardId(1);
+            const companyId = await initContract._lastCompanyId()
+            console.log("companyIdP", companyId);
+            // setCompanyId(parseInt(companyId.toString()));
+            setCompanyId(1);
+
+          }catch(err){
+            console.error("No se ha podido obtener data del contrato", err);
+          }
+          setIsLoading(false);
+        } else {
+          throw new Error("Provider not initialized");
+        }
+
+        // setEth(
+        //   web3.utils.fromWei(
+        //     await web3.eth.getBalance(initAddress as string), // Balance is in wei
+        //     "ether"
+        //   )
+        // );
+
+        // setBalanceOf(await initContract.balanceOf(initAddress));
+
+        // setAllowance(
+        //   await initContract.allowance(
+        //     initAddress,
+        //     "0xD96B642Ca70edB30e58248689CEaFc6E36785d68"
+        //   )
+        // );
+
       } catch (error) {
         console.error(error);
       }
@@ -89,6 +195,25 @@ function App() {
 
     init();
   }, []);
+
+  // useEffect(() => {
+  //   const init = async () => {
+  //     try {
+  //       // IMP START - SDK Initialization
+  //       await web3auth.initModal();
+  //       // IMP END - SDK Initialization
+  //       // setProvider(web3auth.provider);
+
+  //       if (web3auth.connected) {
+  //         setLoggedIn(true);
+  //       }
+  //     } catch (error) {
+  //       console.error(error);
+  //     }
+  //   };
+
+  //   init();
+  // }, []);
 
   const login = async () => {
     // IMP START - Login
@@ -167,120 +292,25 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        // IMP START - SDK Initialization
-        // Verificar si el web3auth ya está conectado
-        if (!web3auth.connected && !web3auth.provider) {
-          await web3auth.initModal();
-          // setWeb3authProvider(web3auth.provider);
-        }
-        // Verificar si provider está inicializado
-        if (web3auth.provider) {
-          // setWeb3authProvider(web3auth.provider);
-          // const user: Partial<UserInfo> = await web3auth.getUserInfo();
-          // console.log("USER", user);
-          // setUser(user);
 
-          // const w3aProvider: ethers.BrowserProvider = new ethers.BrowserProvider(
-          //   web3auth.provider
-          // );
-          // console.log("w3aProvider", w3aProvider);
-
-          // const w3aSigner: ethers.JsonRpcSigner = await w3aProvider.getSigner();
-          // setWeb3authSigner(w3aSigner);
-          // console.log("w3aSigner", w3aSigner);
-          // console.log("Web3authProvider", web3authProvider);
-
-          // const web3 = new Web3(web3auth.provider as any);
-          // console.log("web3", web3);
-;
-          // let initAddress: any = await web3.eth.getAccounts();
-          // initAddress = initAddress[0];
-
-          // console.log("initAddress", initAddress);
-          // setAddress(initAddress);
-
-          if (web3auth.connected) {
-            setLoggedIn(true);
-          }
-
-          // const provider: JsonRpcProvider = new JsonRpcProvider(
-          //   process.env.REACT_APP_ARBITRUM_SEPOLIA_RPC_URL
-          // );
-          ////////////////////BORRAR; ES PARA PRUEBAS LOCALES CON ANVIL SOLO///////////////
-          // const provider: JsonRpcProvider = new JsonRpcProvider('http://localhost:8545');
-          const provider: JsonRpcProvider = new JsonRpcProvider('http://localhost:8545', {
-            chainId: 31337,
-            name: 'anvil'
-          });
-          provider? setProvider(provider) : setProvider(null);
-          console.log("APP provider", provider);
-          //////////////////////////////////
-          // const signer: ethers.Wallet = new Wallet(
-          //   process.env.REACT_APP_WALLET_PRIVATE_KEY || "",
-          //   provider
-          // );
-          ////////////////////BORRAR; ES PARA PRUEBAS LOCALES CON ANVIL SOLO///////////////
-          setAddress("0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266");
-          const signer: ethers.Wallet = new Wallet(
-            "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
-            provider
-          );
-          //////////////////////////////////
-          setSigner(signer);
-          console.log("Signer APP", signer);
-          
-          // const initContract = new Contract(CONTRACT_ADDRESS, businessCardABI, signer);
-          ////////////////////BORRAR; ES PARA PRUEBAS LOCALES CON ANVIL SOLO///////////////
-          const initContract = new Contract("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512", businessCardABI, signer);
-          //////////////////////////////////
-          setContract(initContract);
-          // console.log("ContractAPP", initContract);
-
-          
-
-          setIsLoading(false);
-        } else {
-          throw new Error("Provider not initialized");
-        }
-
-        // setEth(
-        //   web3.utils.fromWei(
-        //     await web3.eth.getBalance(initAddress as string), // Balance is in wei
-        //     "ether"
-        //   )
-        // );
-
-        // setBalanceOf(await initContract.balanceOf(initAddress));
-
-        // setAllowance(
-        //   await initContract.allowance(
-        //     initAddress,
-        //     "0xD96B642Ca70edB30e58248689CEaFc6E36785d68"
-        //   )
-        // );
-
-      } catch (error) {
-        console.error(error);
-      }
-    };
-
-    init();
-  }, []);
-
+  console.log("Mintdata Fuera Upload: ", cardId,companyId,fileURL);
+  console.log("Formparams Fuera Upload: ", formParams);
   async function uploadMetadataToIPFS() {
-    const {name, cargo, descripcion, telefono, email} = formParams;
+    // setCardId(1);
+    // setCompanyId(1);
+    console.log("Formparams Dentro Upload: ", formParams);
+    const {name, position, urls} = formParams;
+    console.log("Data Upload: ", name, position, urls);
+    console.log("Total Data Upload: ", cardId, companyId, name, position, urls, fileURL);
     //Make sure that none of the fields are empty
-    if( !name || !cargo || !descripcion || !telefono || !email || !fileURL)
+    if(!cardId || !companyId || !name || !position || !urls || !fileURL)
     {
         updateMessage("Please fill all the fields!")
         return -1;
     }
 
     const nftJSON = {
-        name, cargo, descripcion, telefono, email, image: fileURL
+        cardId, companyId, name, position, urls, image: fileURL
     }
 
     try {
@@ -297,70 +327,54 @@ function App() {
     }
 }
 
-async function mintCard(e: React.FormEvent<HTMLButtonElement>) {
-    console.log("Minting card");
-    e.preventDefault();
+// async function mintCard(e: React.FormEvent<HTMLButtonElement>) {
+  async function mintCard() {    
+console.log("Minting card");
+// e.preventDefault();
 
-    //Upload data to IPFS
-    try {
+//Upload data to IPFS
+try {
+        console.log("Inicio proceso subir Json");
         const metadataURL = await uploadMetadataToIPFS();
+        console.log("metadataURL en Mint", metadataURL);
         if(metadataURL === -1)
-            return;
+          return;
         //After adding your Hardhat network to your metamask, this code will get providers and signers
         // const provider = new ethers.Web3Provider(window.ethereum);
         // const signer = provider.getSigner();
         // disableButton();
         updateMessage("Uploading NFT(takes 5 mins).. please dont click anything!");
-
+        
         //massage the params to be sent to the create NFT request
         // const price = ethers.parseUnits(formParams.price, 'ether');
         // let listingPrice = await contract.getListPrice();
         // listingPrice = listingPrice.toString();
-
+        
         //actually create the Card
+        console.log("Inicio proceso minteo");
         if (contract){
-          // let transaction = await contract.createToken(metadataURL, price, { value: listingPrice });
-          // await transaction.wait();
+          let transaction = await contract.createMyCard(metadataURL);
+          await transaction.wait();
+          console.log("transaction", transaction);
         }
-
-        alert("Successfully listed your NFT!");
+        
+        alert("Successfully listed your Card!");
         // enableButton();
         updateMessage("");
-        updateFormParams({ name: '', cargo: '', descripcion: '', telefono: '+', email: ''});
+        updateFormParams({ name: '', position: '', urls: ''});
         window.location.replace("/")
     }
     catch(e) {
         alert( "Upload error"+e )
     }
 }
-    //This function uploads the NFT image to IPFS
-    async function OnChangeFile(e: React.FormEvent<HTMLInputElement>) {
-      const fileInput = e.target as HTMLInputElement; // Afirmación de tipo
-    const file = fileInput.files?.[0]; // Usa el operador de encadenamiento opcional
-      //check for file extension
-      try {
-          //upload the file to IPFS
-          // disableButton();
-          updateMessage("Uploading image.. please dont click anything!")
-          if(file){
-            const response = await uploadFileToIPFS(file);
-            if(response.success === true) {
-              // enableButton();
-              updateMessage("")
-              console.log("Uploaded image to Pinata: ", response.pinataURL)
-              // Verifica que response.pinataURL no sea undefined
-              if (response.pinataURL) {
-                setFileURL(response.pinataURL);
-                console.log("fileURL updated:", response.pinataURL);
-            }
-          }
-      }
-    }
-      catch(e) {
-          console.log("Error during file upload", e);
-      }
-  }
-  
+ 
+const handleFormSubmit = (data: CardData, fileURL: string | null) => {
+  updateFormParams(data);
+  setFileURL(fileURL);
+  console.log("Datos actualizados en page.tsx:", data, fileURL);
+  mintCard();
+};
 
   const loggedInView = (
     <>
@@ -402,48 +416,11 @@ async function mintCard(e: React.FormEvent<HTMLButtonElement>) {
           </button>
         </div>
         <div className="flex flex-col place-items-center mt-10" id="nftForm">
-            <form className="bg-white shadow-md rounded px-8 pt-4 pb-8 mb-4 text-blue-500">
-            <h3 className="text-center font-bold mb-8">Upload your Card to the APP</h3>
-                <div className="mb-4">
-                    <label className="block text-sm font-bold mb-2" htmlFor="name">Nombre</label>
-                    <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    id="name" type="text" name="name" placeholder="Tu nombre" required onChange={e => updateFormParams({...formParams, name: e.target.value})} value={formParams.name}></input>
-                </div>
-                <div className="mb-4">
-                    <label className="block text-sm font-bold mb-2" htmlFor="name">Cargo</label>
-                    <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    id="cargo" type="text" name="cargo" placeholder="Tu cargo" required onChange={e => updateFormParams({...formParams, cargo: e.target.value})} value={formParams.cargo}></input>
-                </div>
-                <div className="mb-6">
-                    <label className="block text-sm font-bold mb-2" htmlFor="description">Descripción</label>
-                    <textarea className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    cols={40} rows={5} id="descripcion" name="descripcion" required placeholder="Descripción" value={formParams.descripcion} onChange={e => updateFormParams({...formParams, descripcion: e.target.value})}></textarea>
-                </div>
-                <div className="mb-4">
-                    <label className="block text-sm font-bold mb-2" htmlFor="telefono">Teléfono</label>
-                    <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    id="telefono" type="tel" name="telefono" placeholder="+34 555 555 555" required onChange={e => updateFormParams({...formParams, telefono: e.target.value})} value={formParams.telefono}></input>
-                </div>
-                <div className="mb-4">
-                    <label className="block text-sm font-bold mb-2" htmlFor="email">Email</label>
-                    <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    id="email" type="email" name="email" placeholder="tunombre@loquesea.com" required onChange={e => updateFormParams({...formParams, email: e.target.value})} value={formParams.email}></input>
-                </div>
-                {/* <div className="mb-6">
-                    <label className="block text-purple-500 text-sm font-bold mb-2" htmlFor="price">Price (in ETH)</label>
-                    <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    type="number" placeholder="Min 0.01 ETH" step="0.01" value={formParams.price} onChange={e => updateFormParams({...formParams, price: e.target.value})}></input>
-                </div> */}
-                <div>
-                    <label className="block text-sm font-bold mb-2" htmlFor="image">Subir imagen (&lt;500 KB)</label>
-                    <input type={"file"} onChange={OnChangeFile}></input>
-                </div>
-                <br></br>
-                <div className="text-red-500 text-center">{message}</div>
-                <button onClick={listNFT} className="font-bold mt-10 w-full bg-blue-500 text-white rounded p-2 shadow-lg" id="list-button">
-                    Crear Card
+        <CardForm onSubmit={handleFormSubmit} cardId={cardId} companyId={companyId} />                
+        <p>{message}</p>
+        <button onClick={mintCard} className="font-bold mt-10 w-full bg-blue-500 text-white rounded p-2 shadow-lg" id="list-button">
+                    Crear CardXX
                 </button>
-            </form>
         </div>
       </div>
     </>

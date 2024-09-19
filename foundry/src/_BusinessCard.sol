@@ -3,22 +3,21 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import { Card } from "./models/Card.sol";
 import { CardDataInit } from "./models/CardDataInit.sol";
 import { Company } from "./models/Company.sol";
 import { CompanyInit } from "./models/CompanyInit.sol";
 import { Contact } from "./models/Contact.sol";
 import { Id } from "./models/Id.sol";
-// import { PrivateInfoCard } from "./models/PrivateInfoCard.sol";
-// import { PublicInfoCard } from "./models/PublicInfoCard.sol";
+import { PrivateInfoCard } from "./models/PrivateInfoCard.sol";
+import { PublicInfoCard } from "./models/PublicInfoCard.sol";
 
 /**
  * @title Business Card Contract
  * @dev This contract manages the creation and sharing of business cards and company profiles.
  * It allows companies to create business cards for employees and users to share their cards.
  */
-contract BusinessCard is ERC721, ERC721URIStorage, Ownable {
+contract BusinessCard is ERC721, Ownable {
 
     /**
     * @notice Error thrown when a card does not exist for a given address.
@@ -30,8 +29,8 @@ contract BusinessCard is ERC721, ERC721URIStorage, Ownable {
     /// @notice Emitted when a new business card is created.
     /// @param owner The address that owns the card.
     /// @param cardID The unique ID of the created card.
-    event CardCreated(address indexed owner, uint256 cardID);
-    // event CardCreated(address indexed owner, uint256 cardID, string name);
+    /// @param name The name associated with the card.
+    event CardCreated(address indexed owner, uint256 cardID, string name);
 
     /// @notice Emitted when a new company is created.
     /// @param companyAddress The address of the company creator.
@@ -58,30 +57,10 @@ contract BusinessCard is ERC721, ERC721URIStorage, Ownable {
     mapping(address => Card) private cards;
     mapping(address => mapping(address => uint256)) public connectionCounter;
     mapping(address => Id) private companiesId;
-    // mapping(address => uint256) private companiesId;
-    //considero que el bool del struct id no es necesario. Si una address tiene un id existe, si no tiene id no existe
     mapping(uint16 => Company) private companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
     mapping(address => mapping(address => bool)) private contacts; // Tracks if a card was shared with another address
-    //Creo que con connectionCounter (que entiendo que contaria el numero de conexiones) no seria necesario el mapping contacts . Si una address 
-    //tiene 1 conexion al menos ya existe(ya es como un true y si no tiene ninguna es como un false)
 
-    //////////// Structs ///////////////  Temporalmente. Descomentar importaciones  
 
-    // Struct de retorno para funciones de acceso a datos publicos
-    struct PublicInfoCard {
-        uint256 cardId;
-        uint16 companyId;
-        string name;
-        string photo; 
-        string position;
-        string[] urls;
-        uint256 score;
-        uint256 numberOfContacts;
-    }
-    struct PrivateInfoCard {
-        uint64 phone;
-        string email;
-    }
     //////////// Modifiers ///////////////    
 
     /**
@@ -150,24 +129,6 @@ contract BusinessCard is ERC721, ERC721URIStorage, Ownable {
 
     ////////////////////////////////////////////////////
 
-    function supportsInterface(bytes4 interfaceId)
-    public
-    view
-    override(ERC721, ERC721URIStorage)
-    returns (bool)
-{
-    return super.supportsInterface(interfaceId);
-}
-
-
-function tokenURI(uint256 tokenId)
-    public
-    view
-    override(ERC721, ERC721URIStorage)
-    returns (string memory)
-{
-    return super.tokenURI(tokenId);
-}
     /**
      * @notice Set the fee required to create a new company profile.
      * @dev Only callable by the contract owner.
@@ -210,19 +171,18 @@ function tokenURI(uint256 tokenId)
      */
     function createCardFor(CardDataInit memory initValues_, address for_) public onlyCompanies addressNotHaveCard(for_) {
         uint16 companyId = companiesId[msg.sender].id;
-        // _safeCreateCard(initValues_, for_, companyId);
+        _safeCreateCard(initValues_, for_, companyId);
         companies[companyId].companyEmployees++;
     }
 
     /**
      * @notice Create a new business card for the sender.
      * @dev The sender must not already have a card.
-     * @param tokenURI The initial data for the metadata business card.
+     * @param initValues_ The initial data for the business card.
      */
-    function createMyCard(string memory tokenURI) public addressNotHaveCard(msg.sender) { //quizas
-        // uint16 companyId = 0; //Not belonging to any company //Temporalmente desactivado
-        _safeCreateCard(msg.sender, tokenURI);
-        // _safeCreateCard(initValues_, msg.sender, companyId);
+    function createMyCard(CardDataInit memory initValues_) public addressNotHaveCard(msg.sender) {
+        uint16 companyId = 0; //Not belonging to any company
+        _safeCreateCard(initValues_, msg.sender, companyId);
     }
 
     /**
@@ -238,27 +198,22 @@ function tokenURI(uint256 tokenId)
 
     /**
      * @dev Internal function to safely create a business card for a given address.
+     * @param initValues_ The initial data for the business card.
      * @param to The address for which the card is being created.
-     * @param _tokenURI Data for the metadata business card.
      */
-    function _safeCreateCard(address to, string memory _tokenURI) private {
-    // function _safeCreateCard(CardDataInit memory initValues_, address to, uint16 companyId) private {
+    function _safeCreateCard(CardDataInit memory initValues_, address to, uint16 companyId) private {
         _lastCardId++;
-        // Card memory newCard;
-        // newCard.privateInfo.email = initValues_.email;
-        // newCard.publicInfo.cardId = _lastCardId;
-        // newCard.publicInfo.name = initValues_.name;
-        // newCard.privateInfo.phone = initValues_.phone;
-        // newCard.publicInfo.companyId = companyId;
-        // newCard.publicInfo.position = initValues_.position;
-        // newCard.publicInfo.urls = initValues_.urls;
-        // newCard.exists = true;
-        // cards[to] = newCard;
-        _safeMint(to, _lastCardId);
-        _setTokenURI(_lastCardId++, _tokenURI);
-   
-        emit CardCreated(to, _lastCardId);
-        // emit CardCreated(to, newCard.publicInfo.cardId, newCard.publicInfo.name);
+        Card memory newCard;
+        newCard.privateInfo.email = initValues_.email;
+        newCard.publicInfo.cardId = _lastCardId;
+        newCard.publicInfo.name = initValues_.name;
+        newCard.privateInfo.phone = initValues_.phone;
+        newCard.publicInfo.companyId = companyId;
+        newCard.publicInfo.position = initValues_.position;
+        newCard.publicInfo.urls = initValues_.urls;
+        newCard.exists = true;
+        cards[to] = newCard;
+        emit CardCreated(to, newCard.publicInfo.cardId, newCard.publicInfo.name);
     }
 
     /**

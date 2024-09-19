@@ -14,6 +14,9 @@ import {Id} from "../src/models/Id.sol";
 
 import {Contact} from "../src/models/Contact.sol";
 
+//LOS TEST DEBEN CUBRIR LOS CASOS EN QUE LAS COSAS FALLAN, POR EJEMPLO 
+//QUE NO SEA OWNER SI ES NECESARIO QUE LO SEA
+
 contract BusinnesCardTest is Test {
     BusinessCard businessCard;
     address owner = address(0x1); // Owner inicial
@@ -31,15 +34,16 @@ contract BusinnesCardTest is Test {
     }
 
     function createCard() private {
-        string[] memory urls;
-        CardDataInit memory dataInit = CardDataInit({
-            name: "Alice Lopez",
-            email: "alice_lopez@gmail.com",
-            position: "",
-            phone: 1234123412,
-            urls: urls
-        });
-        businessCard.createMyCard(dataInit);
+        string memory tokenURI = "https://enlace_a_metadata_ipfs";
+        // string[] memory urls;
+        // CardDataInit memory dataInit = CardDataInit({
+        //     name: "Alice Lopez",
+        //     email: "alice_lopez@gmail.com",
+        //     position: "",
+        //     phone: 1234123412,
+        //     urls: urls
+        // });
+        businessCard.createMyCard(tokenURI);
     }
 
     function testCreateCard() public {
