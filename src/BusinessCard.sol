@@ -82,14 +82,14 @@ contract BusinessCard is ERC721, Ownable {
         return companiesId[msg.sender].id;
     }
 
-    /**
-     * @notice Get the name of a company by its ID.
-     * @param id_ The ID of the company.
-     * @return The name of the company.
-     */
-    function getCompanyName(uint16 id_) public view returns(string memory) {
-        return companies[id_].initValues.companyName;
-    }
+    // /**
+    //  * @notice Get the name of a company by its ID.
+    //  * @param id_ The ID of the company.
+    //  * @return The name of the company.
+    //  */
+    // function getCompanyName(uint16 id_) public view returns(string memory) {
+    //     return companies[id_].initValues.companyName;
+    // }
 
     function getMyCompany() public view returns(Company memory) {
         return companies[companiesId[msg.sender].id];
@@ -146,6 +146,28 @@ contract BusinessCard is ERC721, Ownable {
         companiesId[msg.sender] = Id({id: lastCompanyId, exists: true});
         companies[lastCompanyId] = newCompany;
         emit CompanyCreated(msg.sender, lastCompanyId);
+    }
+
+    /**
+     * @notice Create a new company profile linked to a specific address.
+     * @dev Only the contract owner can call this function. 
+     * No payment is required for this function. 
+     * @param initValues_ The initial data for the company.
+     * @param to_ The address to which the company profile will be linked.
+     */
+
+    function createForCompany(CompanyInit memory initValues_, address to_) public onlyOwner {
+        require(!companiesId[to_].exists, "Company already exists");
+        Company memory newCompany = Company({
+            initValues: initValues_,
+            companyEmployees: 0,
+            scoring: 0,
+            verified: false
+        });
+        lastCompanyId++;
+        companiesId[to_] = Id({id: lastCompanyId, exists: true});
+        companies[lastCompanyId] = newCompany;
+        emit CompanyCreated(to_, lastCompanyId);
     }
 
     /**
