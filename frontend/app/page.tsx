@@ -29,6 +29,7 @@ interface CardData {
   name: string;
   position: string;
   urls: string;
+  privateInfoUrl: string;
 }
 
 // IMP START - Dashboard Registration
@@ -71,7 +72,7 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const [formParams, updateFormParams] = useState({ name: '', position: '', urls: ''});
+  const [formParams, updateFormParams] = useState({ name: '', position: '', urls: '', privateInfoUrl: ''});
   const [message, updateMessage] = useState('');
   const [fileURL, setFileURL] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
@@ -158,11 +159,11 @@ function App() {
             const cardId = await initContract._lastCardId();
             console.log("cardId", cardId);
             // setCardId(parseInt(cardId.toString()));
-            setCardId(1);
-            const companyId = await initContract._lastCompanyId()
-            console.log("companyIdP", companyId);
+            setCardId(cardId);
+            const companyId = await initContract.getMyCompanyId();
+            console.log("companyId", companyId.toString());
             // setCompanyId(parseInt(companyId.toString()));
-            setCompanyId(1);
+            setCompanyId(companyId);
 
           }catch(err){
             console.error("No se ha podido obtener data del contrato", err);
@@ -299,23 +300,24 @@ function App() {
     // setCardId(1);
     // setCompanyId(1);
     console.log("Formparams Dentro Upload: ", formParams);
-    const {name, position, urls} = formParams;
-    console.log("Data Upload: ", name, position, urls);
-    console.log("Total Data Upload: ", cardId, companyId, name, position, urls, fileURL);
+    const {name, position, urls, privateInfoUrl} = formParams;
+    console.log("Data Upload: ", name, position, urls, privateInfoUrl);
+    console.log("Total Data Upload: ", cardId, companyId, name, position, urls, privateInfoUrl, fileURL);
     //Make sure that none of the fields are empty
-    if(!cardId || !companyId || !name || !position || !urls || !fileURL)
+    if(!cardId || !companyId || !name || !position || !urls || !privateInfoUrl || !fileURL)
     {
         updateMessage("Please fill all the fields!")
         return -1;
     }
 
-    const nftJSON = {
-        cardId, companyId, name, position, urls, image: fileURL
+    const cardJSON = {
+        cardId, companyId, name, position, urls, privateInfoUrl, image: fileURL
     }
 
     try {
         //upload the metadata JSON to IPFS
-        const response = await uploadJSONToIPFS(nftJSON);
+        // const response = await uploadJSONToIPFS(cardJSON);//TEMPORALMENTE DESACTIVADA DURANTE EL DESARROLLO
+        const response = { success: true, pinataURL: "https://gateway.pinata.cloud/ipfs/QmU797s6p95tXiVxd7cr9yYR7eaxJmW5si1LAMBMxLjFnr" };
         if(response.success === true){
             console.log("Uploaded JSON to Pinata: ", response);
             console.log("Uploaded JSON PinataURL: ", response.pinataURL);
@@ -361,7 +363,7 @@ try {
         alert("Successfully listed your Card!");
         // enableButton();
         updateMessage("");
-        updateFormParams({ name: '', position: '', urls: ''});
+        updateFormParams({ name: '', position: '', urls: '', privateInfoUrl: ''});
         window.location.replace("/")
     }
     catch(e) {
@@ -416,7 +418,7 @@ const handleFormSubmit = (data: CardData, fileURL: string | null) => {
           </button>
         </div>
         <div className="flex flex-col place-items-center mt-10" id="nftForm">
-        <CardForm onSubmit={handleFormSubmit} cardId={cardId} companyId={companyId} />                
+        <CardForm onSubmit={handleFormSubmit} />                
         <p>{message}</p>
         <button onClick={mintCard} className="font-bold mt-10 w-full bg-blue-500 text-white rounded p-2 shadow-lg" id="list-button">
                     Crear CardXX

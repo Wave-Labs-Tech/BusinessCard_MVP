@@ -1,34 +1,32 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { uploadJSONToIPFS, uploadFileToIPFS } from "../utils/Pinata";
 
-// uint256 cardId;
-// uint16 companyId;
-// string name;
-// string photo; 
-// string position;
-// string[] urls;
+interface PrivateInfo {
+    telefono: string;
+    email: string;
+  }
 interface CardData {
     name: string;
     position: string;
     urls: string;
+    privateInfoUrl: string;
   }
 
 interface CardFormProps {
     onSubmit: (data: CardData, fileURL: string | null) => void;
-    cardId: number | null;
-    companyId: number | null;
   }
 
   const CardForm: React.FC<CardFormProps> = ({ onSubmit }) => {
     const [formParams, updateFormParams] = useState<CardData>({
         name: '',
-        // photo: '',
       position: '',
       urls: '',
-    //   telefono: '',
-    //   email: '',
+      privateInfoUrl: '',
     });
-    // const [fileURL, setFileURL] = useState(null);
+    const [privateInfo, setPrivateInfo] = useState<PrivateInfo>({
+        telefono: '',
+        email: '',
+      });
 
     const [message, updateMessage] = useState('');
     const [fileURL, setFileURL] = useState<string | null>(null);
@@ -66,10 +64,43 @@ interface CardFormProps {
         }
     }
 
-    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        console.log("formparams y fileurl en CardForm", formParams, fileURL);
-        onSubmit({ ...formParams}, fileURL );
+        const {telefono, email} = privateInfo;
+        if(!telefono || !email)
+            {
+                updateMessage("Please fill all the fields!")
+                return;
+            }
+            const privateInfoJSON = {
+                telefono, email
+            }
+        
+            try {
+                //upload the metadata JSON to IPFS
+                // const response = await uploadJSONToIPFS(privateInfoJSON);//DESACTIVADO TEMPORALMENTE
+                const response = { success: true, pinataURL: "https://gateway.pinata.cloud/ipfs/Qmds1TGp6kRiqpD8qp9Z67TSmqs5nqBk5bmbNDjSskmziW" };
+                if(response.success === true){
+                    console.log("Uploaded private JSON to Pinata: ", response);
+                    console.log("Uploaded private JSON PinataURL: ", response.pinataURL);
+                    // Actualizar formParams con la URL de la información privada
+                    updateFormParams(prev => ({
+                        ...prev,
+                        privateInfoUrl: response.pinataURL || ''
+                    }));
+                    // Esperar un momento para asegurarse de que el estado se haya actualizado
+      await new Promise(resolve => setTimeout(resolve, 0));
+                }
+                console.log("formparams y fileurl en CardForm", formParams, fileURL);
+                onSubmit({ ...formParams}, fileURL );
+            }
+            catch(e) {
+                console.log("error uploading JSON metadata:", e);
+                updateMessage("Error uploading private JSON metadata");
+            }
+      };
+      const handleContactPrivateInfoChange = (field: keyof PrivateInfo, value: string) => {
+        setPrivateInfo(prev => ({ ...prev, [field]: value }));
       };
 
   return(
@@ -90,18 +121,18 @@ interface CardFormProps {
                 <div className="mb-6">
                     <label className="block text-sm font-bold mb-2" htmlFor="urls">Urls</label>
                     <textarea className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    cols={40} rows={5} id="descripcion" name="urls" required placeholder="Urls" value={formParams.urls} onChange={e => updateFormParams({...formParams, urls: e.target.value})}></textarea>
+                    cols={40} rows={5} id="urls" name="urls" required placeholder="Urls" value={formParams.urls} onChange={e => updateFormParams({...formParams, urls: e.target.value})}></textarea>
                 </div>
-                {/* <div className="mb-4">
+                <div className="mb-4">
                     <label className="block text-sm font-bold mb-2" htmlFor="telefono">Teléfono</label>
                     <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    id="telefono" type="tel" name="telefono" placeholder="+34 555 555 555" required onChange={e => updateFormParams({...formParams, telefono: e.target.value})} value={formParams.telefono}></input>
+                    id="telefono" type="tel" name="telefono" placeholder="+34 555 555 555" required onChange={e => handleContactPrivateInfoChange("telefono", e.target.value)} value={privateInfo.telefono}></input>
                 </div>
                 <div className="mb-4">
                     <label className="block text-sm font-bold mb-2" htmlFor="email">Email</label>
                     <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
-                    id="email" type="email" name="email" placeholder="tunombre@loquesea.com" required onChange={e => updateFormParams({...formParams, email: e.target.value})} value={formParams.email}></input>
-                </div> */}
+                    id="email" type="email" name="email" placeholder="tunombre@loquesea.com" required onChange={e => handleContactPrivateInfoChange("email",e.target.value)} value={privateInfo.email}></input>
+                </div>
                 {/* <div className="mb-6">
                     <label className="block text-purple-500 text-sm font-bold mb-2" htmlFor="price">Price (in ETH)</label>
                     <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" 
