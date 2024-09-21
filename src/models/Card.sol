@@ -5,7 +5,9 @@ import { PublicInfoCard } from "./PublicInfoCard.sol";
 import { PrivateInfoCard } from "./PrivateInfoCard.sol";
 
 struct Card {
-    PublicInfoCard publicInfo;
-    PrivateInfoCard privateInfo;
     bool exists;
+    uint32 companyID;
+    uint32 numberOfContacts;
+    uint64 score;
+    string privateInfoURL;
 }

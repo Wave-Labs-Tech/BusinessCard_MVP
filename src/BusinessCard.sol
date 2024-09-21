@@ -2,6 +2,7 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import { Card } from "./models/Card.sol";
 import { CardDataInit } from "./models/CardDataInit.sol";
@@ -17,13 +18,12 @@ import { PublicInfoCard } from "./models/PublicInfoCard.sol";
  * @dev This contract manages the creation and sharing of business cards and company profiles.
  * It allows companies to create business cards for employees and users to share their cards.
  */
-contract BusinessCard is ERC721, Ownable {
+contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
 
     /// @notice Emitted when a new business card is created.
     /// @param owner The address that owns the card.
     /// @param cardID The unique ID of the created card.
-    /// @param name The name associated with the card.
-    event CardCreated(address indexed owner, uint256 cardID, string name);
+    event CardCreated(address indexed owner, uint256 cardID);
 
     /// @notice Emitted when a new company is created.
     /// @param companyAddress The address of the company creator.
@@ -66,6 +66,16 @@ contract BusinessCard is ERC721, Ownable {
      */
     constructor() ERC721("Business Card", "BCARD") Ownable(msg.sender) { }
 
+    function tokenURI(uint256 tokenId) public view override(ERC721, ERC721URIStorage) returns (string memory) {
+        return super.tokenURI(tokenId);
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
+
+    
+
     mapping(address => Card) private cards;
     mapping(address => Id) private companiesId;
     mapping(uint16 => Company) private companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
@@ -104,13 +114,13 @@ contract BusinessCard is ERC721, Ownable {
         return companies[id_].companyEmployees;
     }
 
-    /**
-     * @notice Get the ID of the card owned by the sender.
-     * @return The ID of the sender's card.
-     */
-    function getMyCardId() public view returns(uint256){
-        return cards[msg.sender].publicInfo.cardId;
-    }
+    // /**
+    //  * @notice Get the ID of the card owned by the sender.
+    //  * @return The ID of the sender's card.
+    //  */
+    // function getMyCardId() public view returns(uint256){
+    //     return cards[msg.sender].publicInfo.cardId;
+    // }
 
     ////////////////////////////////////////////////////
 
@@ -173,24 +183,22 @@ contract BusinessCard is ERC721, Ownable {
     /**
      * @notice Create a new business card for an address.
      * @dev Only callable by registered companies. The address must not already have a card.
-     * @param initValues_ The initial data for the business card.
      * @param for_ The address for which the card is being created.
      */
-    function createCardFor(CardDataInit memory initValues_, address for_) public onlyCompanies addressNotHaveCard(for_) {
+    function createCardFor(string memory tokenURI_, string memory privateInfoURL_, address for_) public onlyCompanies addressNotHaveCard(for_) {
         uint16 companyId = companiesId[msg.sender].id;
-        _safeCreateCard(initValues_, for_, companyId);
+        _safeCreateCard(tokenURI_, privateInfoURL_, for_, companyId);
         companies[companyId].companyEmployees++;
     }
 
-    /**
-     * @notice Create a new business card for the sender.
-     * @dev The sender must not already have a card.
-     * @param initValues_ The initial data for the business card.
-     */
-    function createMyCard(CardDataInit memory initValues_) public addressNotHaveCard(msg.sender) {
-        uint16 companyId = 0; //Not belonging to any company
-        _safeCreateCard(initValues_, msg.sender, companyId);
-    }
+    // /**
+    //  * @notice Create a new business card for the sender.
+    //  * @dev The sender must not already have a card.
+    //  */
+    // function createMyCard(string memory tokenURI_, string memory privateInfoURL_) public addressNotHaveCard(msg.sender) {
+    //     // uint16 companyId = 0; //Not belonging to any company
+    //     _safeCreateCard(tokenURI_,privateInfoURL_ , msg.sender, 0);
+    // }
 
     /**
      * @notice Share the sender's business card with another address.
@@ -205,37 +213,32 @@ contract BusinessCard is ERC721, Ownable {
 
     /**
      * @dev Internal function to safely create a business card for a given address.
-     * @param initValues_ The initial data for the business card.
+     * @param tokenURI_ The initial data for the business card.
      * @param to The address for which the card is being created.
      */
-    function _safeCreateCard(CardDataInit memory initValues_, address to, uint16 companyId) private {
+    function _safeCreateCard(string memory tokenURI_, string memory privateInfoURL, address to, uint16 companyId_) private {
         lastCardId++;
         Card memory newCard;
-        newCard.privateInfo.email = initValues_.email;
-        newCard.publicInfo.cardId = lastCardId;
-        newCard.publicInfo.name = initValues_.name;
-        newCard.privateInfo.phone = initValues_.phone;
-        newCard.publicInfo.companyId = companyId;
-        newCard.publicInfo.position = initValues_.position;
-        newCard.publicInfo.urls = initValues_.urls;
+        newCard.privateInfoURL = privateInfoURL;
+        newCard.companyID = companyId_;
         newCard.exists = true;
         cards[to] = newCard;
-        emit CardCreated(to, newCard.publicInfo.cardId, newCard.publicInfo.name);
+        _safeMint(to, lastCardId);
+        _setTokenURI(lastCardId, tokenURI_);
+        emit CardCreated(to,lastCardId);
     }
 
     /**
      * @notice Retrieves the business card information of a given address.
      * @dev If the caller is not a contact of the card owner, private information (phone and email) will be hidden.
      * @param cardOwner The address of the card owner whose information will be retrieved.
-     * @return result A `Card` struct containing the public (and private, if applicable) information of the card owner.
      */
-    function readCard(address cardOwner) public view returns(Card memory) {
-        Card memory result = cards[cardOwner];
-        if(!contacts[cardOwner][msg.sender]){
-            result.privateInfo.phone = 0;
-            result.privateInfo.email = "";
+    function readCard(address cardOwner) public view returns(string memory) {
+        Card memory card =cards[cardOwner];
+        if(contacts[cardOwner][msg.sender]){
+            return card.privateInfoURL;
         }
-        return result;
+        return "";
     }
 
 }
