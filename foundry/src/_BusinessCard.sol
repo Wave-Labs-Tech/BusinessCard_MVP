@@ -17,7 +17,7 @@ import { PublicInfoCard } from "./models/PublicInfoCard.sol";
  * @dev This contract manages the creation and sharing of business cards and company profiles.
  * It allows companies to create business cards for employees and users to share their cards.
  */
-contract BusinessCard is ERC721, Ownable {
+contract _BusinessCard is ERC721, Ownable {
 
     /**
     * @notice Error thrown when a card does not exist for a given address.

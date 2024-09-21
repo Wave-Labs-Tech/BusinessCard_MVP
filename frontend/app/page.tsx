@@ -9,28 +9,25 @@ import './globals.css';
 import { Contract, ethers, JsonRpcProvider, Provider, Signer, Wallet } from "ethers";
 import { businessCardABI } from "./assets/abis/businessCardABI";
 import { CONTRACT_ADDRESS } from "./assets/constants/index";
-import  CardForm  from "./components/CardForm";
+import CardForm from "./components/CardForm";
+import CryptoJS from "crypto-js";
+import { encryptData, decryptData } from "./utils/Crypto";
 
 import { uploadJSONToIPFS, uploadFileToIPFS } from "./utils/Pinata";
 import { useRouter } from 'next/navigation';
+import { CardData } from '../types';
 
 // IMP START - Quick Start
 import { Web3Auth } from "@web3auth/modal";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 // IMP END - Quick Start
 
 // IMP START - Blockchain Calls
 import RPC from "./ethersRPC";
+import { from } from "form-data";
 // import RPC from "./viemRPC";
 // import RPC from "./web3RPC";
 // IMP END - Blockchain Calls
-
-interface CardData {
-  name: string;
-  position: string;
-  urls: string;
-  privateInfoUrl: string;
-}
 
 // IMP START - Dashboard Registration
 const clientId = "BPi5PB_UiIZ-cPz1GtV5i1I2iOSOHuimiXBI0e-Oe_u6X3oVAbCiAZOTEBtTXw4tsluTITPqA8zMsfxIKMjiqNQ"; // get from https://dashboard.web3auth.io
@@ -72,14 +69,15 @@ function App() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const [formParams, updateFormParams] = useState({ name: '', position: '', urls: '', privateInfoUrl: ''});
+  // const [formParams, updateFormParams] = useState({ name: '', position: '', urls: '', privateInfoUrl: ''});
+  const [formParams, updateFormParams] = useState({ name: '', position: '', urls: '', telefono: '', email: '' });
   const [message, updateMessage] = useState('');
   const [fileURL, setFileURL] = useState<string | null>(null);
   const [address, setAddress] = useState<string | null>(null);
-  const [] = useState();
+  // const [] = useState();
   const [cardId, setCardId] = useState<number | null>(null);
-  const [companyId, setCompanyId] = useState<number| null>(null);
-
+  const [companyId, setCompanyId] = useState<number | null>(null);
+  
   useEffect(() => {
     const init = async () => {
       try {
@@ -108,7 +106,7 @@ function App() {
 
           // const web3 = new Web3(web3auth.provider as any);
           // console.log("web3", web3);
-;
+          ;
           // let initAddress: any = await web3.eth.getAccounts();
           // initAddress = initAddress[0];
 
@@ -128,7 +126,7 @@ function App() {
             chainId: 31337,
             name: 'anvil'
           });
-          provider? setProvider(provider) : setProvider(null);
+          provider ? setProvider(provider) : setProvider(null);
           console.log("APP provider", provider);
           //////////////////////////////////
           // const signer: ethers.Wallet = new Wallet(
@@ -144,28 +142,29 @@ function App() {
           //////////////////////////////////
           setSigner(signer);
           console.log("Signer APP", signer);
-          
+
           // const initContract = new Contract(CONTRACT_ADDRESS, businessCardABI, signer);
           ////////////////////BORRAR; ES PARA PRUEBAS LOCALES CON ANVIL SOLO///////////////
           const initContract = new Contract("0x5FbDB2315678afecb367f032d93F642f64180aa3", businessCardABI, signer);
           //////////////////////////////////
           setContract(initContract);
           // console.log("ContractAPP", initContract);
-          
+
           console.log("initContract", initContract);
-          try{
+          try {
             const blockNumber = await provider.getBlockNumber();
             console.log("Current block number:", blockNumber);
-            const cardId = await initContract._lastCardId();
+            const _cardId = await initContract._lastCardId();
+            const cardId = parseInt(_cardId.toString()) + 1;
             console.log("cardId", cardId);
             // setCardId(parseInt(cardId.toString()));
             setCardId(cardId);
-            const companyId = await initContract.getMyCompanyId();
-            console.log("companyId", companyId.toString());
-            // setCompanyId(parseInt(companyId.toString()));
-            setCompanyId(companyId);
+            // const companyId = await initContract.getMyCompanyId();
+            // console.log("companyId", companyId.toString());
+            // // setCompanyId(parseInt(companyId.toString()));
+            // setCompanyId(companyId);
 
-          }catch(err){
+          } catch (err) {
             console.error("No se ha podido obtener data del contrato", err);
           }
           setIsLoading(false);
@@ -293,98 +292,135 @@ function App() {
     }
   }
 
-
-  console.log("Mintdata Fuera Upload: ", cardId,companyId,fileURL);
+  console.log("Mintdata Fuera Upload: ", cardId, companyId, fileURL);
   console.log("Formparams Fuera Upload: ", formParams);
   async function uploadMetadataToIPFS() {
-    // setCardId(1);
-    // setCompanyId(1);
+    let cardCid = null;
+    let privateInfoCid = null;
+    let _companyId = 1;//TEMPORALMENTE
+
     console.log("Formparams Dentro Upload: ", formParams);
-    const {name, position, urls, privateInfoUrl} = formParams;
-    console.log("Data Upload: ", name, position, urls, privateInfoUrl);
-    console.log("Total Data Upload: ", cardId, companyId, name, position, urls, privateInfoUrl, fileURL);
+    // const {name, position, urls, privateInfoUrl} = formParams;
+    const { name, position, urls, telefono, email } = formParams;
+    console.log("Data Upload: ", name, position, urls, telefono, email);
+    console.log("Total Data Upload: ", cardId, _companyId, name, position, urls, telefono, email, fileURL);
     //Make sure that none of the fields are empty
-    if(!cardId || !companyId || !name || !position || !urls || !privateInfoUrl || !fileURL)
-    {
-        updateMessage("Please fill all the fields!")
-        return -1;
+    if (!cardId || !_companyId || !name || !position || !urls || !telefono || !email || !fileURL) {
+      updateMessage("Please fill all the fields!")
+      return -1;
     }
 
     const cardJSON = {
-        cardId, companyId, name, position, urls, privateInfoUrl, image: fileURL
+      cardId, _companyId, name, position, urls, image: fileURL
     }
 
     try {
-        //upload the metadata JSON to IPFS
-        // const response = await uploadJSONToIPFS(cardJSON);//TEMPORALMENTE DESACTIVADA DURANTE EL DESARROLLO
-        const response = { success: true, pinataURL: "https://gateway.pinata.cloud/ipfs/QmU797s6p95tXiVxd7cr9yYR7eaxJmW5si1LAMBMxLjFnr" };
-        if(response.success === true){
-            console.log("Uploaded JSON to Pinata: ", response);
-            console.log("Uploaded JSON PinataURL: ", response.pinataURL);
-            return response.pinataURL;
-        }
+      //upload the metadata JSON to IPFS
+      // const cardResponse = await uploadJSONToIPFS(cardJSON);//TEMPORALMENTE DESACTIVADA DURANTE EL DESARROLLO
+      const cardResponse = { success: true, pinataURL: "https://gateway.pinata.cloud/ipfs/QmWgwHYTUHhc5xb97Psug56JYEWosTdeHnmeNKnrmLR6mS" };
+      if (cardResponse.success === true) {
+        cardCid = cardResponse.pinataURL;
+        console.log("Uploaded cardResponseJSON to Pinata: ", cardResponse);
+        console.log("Uploaded cardResponse JSON PinataURL: ", cardResponse.pinataURL);
+        // return cardResponse.pinataURL;
+      }
     }
-    catch(e) {
-        console.log("error uploading JSON metadata:", e)
+    catch (e) {
+      console.log("error uploading card JSON metadata:", e);
+      return -1;
     }
-}
+    
+    const privateInfoJson = {
+      telefono, email
+    }
+    console.log("PREVIO ENCRIPTAR");
+    const encryptedPrivateInfo = encryptData(privateInfoJson);
+    console.log("Encrypted Data:", encryptedPrivateInfo);
 
-// async function mintCard(e: React.FormEvent<HTMLButtonElement>) {
-  async function mintCard() {    
-console.log("Minting card");
-// e.preventDefault();
+    const decrypted = decryptData(encryptedPrivateInfo); //SOLO TEMPORALMENTE para pruebas
+console.log("Decrypted Data:", decrypted);
 
-//Upload data to IPFS
-try {
-        console.log("Inicio proceso subir Json");
-        const metadataURL = await uploadMetadataToIPFS();
-        console.log("metadataURL en Mint", metadataURL);
-        if(metadataURL === -1)
-          return;
-        //After adding your Hardhat network to your metamask, this code will get providers and signers
-        // const provider = new ethers.Web3Provider(window.ethereum);
-        // const signer = provider.getSigner();
-        // disableButton();
-        updateMessage("Uploading NFT(takes 5 mins).. please dont click anything!");
-        
-        //massage the params to be sent to the create NFT request
-        // const price = ethers.parseUnits(formParams.price, 'ether');
-        // let listingPrice = await contract.getListPrice();
-        // listingPrice = listingPrice.toString();
-        
-        //actually create the Card
-        console.log("Inicio proceso minteo");
-        if (contract){
-          let transaction = await contract.createMyCard(metadataURL);
-          await transaction.wait();
-          console.log("transaction", transaction);
-        }
-        
-        alert("Successfully listed your Card!");
-        // enableButton();
-        updateMessage("");
-        updateFormParams({ name: '', position: '', urls: '', privateInfoUrl: ''});
-        window.location.replace("/")
+    try {
+      if(!encryptedPrivateInfo){
+        return -1;
+      }
+      //upload the metadata JSON to IPFS
+      const encryptedPrivateInfoObj = { encryptedData: encryptedPrivateInfo };
+      // const privateInfoResponse = await uploadJSONToIPFS(encryptedPrivateInfoObj);//TEMPORALMENTE DESACTIVADA DURANTE EL DESARROLLO
+      const privateInfoResponse = { success: true, pinataURL: "https://gateway.pinata.cloud/ipfs/QmZYgYkrCvK56rFVetKB5f2fi6Kdeq9ioyishLRVg1wYg8" }; //Encriptado
+      // const privateInfoResponse = { success: true, pinataURL: "https://gateway.pinata.cloud/ipfs/Qmds1TGp6kRiqpD8qp9Z67TSmqs5nqBk5bmbNDjSskmziW" };//Sin encriptar
+      if (privateInfoResponse.success === true) {
+        privateInfoCid = privateInfoResponse.pinataURL;
+        console.log("Uploaded privateInfoJson to Pinata: ", privateInfoResponse);
+        console.log("Uploaded privateInfoJson PinataURL: ", privateInfoResponse.pinataURL);
+        // return privateInfoResponse.pinataURL;
+      }
+
+    
     }
-    catch(e) {
-        alert( "Upload error"+e )
+    catch (e) {
+      console.log("error uploading JSON private metadata:", e);
+      return -1;
     }
-}
- 
-const handleFormSubmit = (data: CardData, fileURL: string | null) => {
-  updateFormParams(data);
-  setFileURL(fileURL);
-  console.log("Datos actualizados en page.tsx:", data, fileURL);
-  mintCard();
-};
+    return { cardCid, privateInfoCid };
+  }
+
+  // async function mintCard(e: React.FormEvent<HTMLButtonElement>) {
+  async function mintCard() {
+    console.log("Minting card");
+    // e.preventDefault();
+
+    //Upload data to IPFS
+    try {
+      console.log("Inicio proceso subir Json");
+      const result = await uploadMetadataToIPFS();
+      if (result === -1) {
+        console.error("Error uploading metadata to IPFS");
+        return;
+      }
+      const { cardCid, privateInfoCid } = result;
+      console.log("Card CID:", cardCid);
+      console.log("Private Info CID:", privateInfoCid);      
+      // disableButton();
+      updateMessage("Uploading NFT(takes 5 mins).. please dont click anything!");
+
+      //actually create the Card
+      console.log("Inicio proceso minteo");
+      if (contract) {
+        // let transaction = await contract.createMyCard(metadataURL);
+        // await transaction.wait();
+        // console.log("transaction", transaction);
+      }
+
+      alert("Successfully listed your Card!");
+      // enableButton();
+      updateMessage("");
+      // updateFormParams({ name: '', position: '', urls: '', privateInfoUrl: ''});
+      updateFormParams({ name: '', position: '', urls: '', telefono: '', email: '' });
+      window.location.replace("/")
+    }
+    catch (e) {
+      alert("Upload error" + e)
+    }
+  }
+
+  const handleFormSubmit = (data: CardData, fileURL: string | null) => {
+    // if(!CardData){
+    //   return
+    // }
+    updateFormParams(data);
+    setFileURL(fileURL);
+    console.log("Datos actualizados en page.tsx:", data, fileURL);
+    mintCard();
+  };
 
   const loggedInView = (
     <>
       {/* <div className="flex-container"> */}
       <div className="flex flex-col">
-      <div className="flex justify-center bg-blue-500 p-4 rounded-lg">
-        <h2 className="bg-blue-500 text-white">BUSINESS CARD</h2>
-      </div>
+        <div className="flex justify-center bg-blue-500 p-4 rounded-lg">
+          <h2 className="bg-blue-500 text-white">BUSINESS CARD</h2>
+        </div>
         {/* <div>
           <button onClick={getUserInfo} className="card">
             Get User Info XX
@@ -418,11 +454,9 @@ const handleFormSubmit = (data: CardData, fileURL: string | null) => {
           </button>
         </div>
         <div className="flex flex-col place-items-center mt-10" id="nftForm">
-        <CardForm onSubmit={handleFormSubmit} />                
-        <p>{message}</p>
-        <button onClick={mintCard} className="font-bold mt-10 w-full bg-blue-500 text-white rounded p-2 shadow-lg" id="list-button">
-                    Crear CardXX
-                </button>
+          <CardForm onSubmit={handleFormSubmit} />
+          {message && (<p className="w-full p-4 bg-stone-100 flex justify-center mt-2 text-red-600 text-2xl font-bold rounded-md">
+            {message}</p>)}
         </div>
       </div>
     </>
@@ -430,17 +464,17 @@ const handleFormSubmit = (data: CardData, fileURL: string | null) => {
 
   const unloggedInView = (
     <div className="flex flex-col place-items-center mt-10 gap-12 bg-stone-100 p-20 rounded-xl">
-    <div className="w-1/4">
-    {/* <button  onClick={login} className="card"> */}
-    <button onClick={login} className="w-full p-4 border-2 border-blue-500 rounded-xl bg-stone-200 text-xl text-blue-700 font-bold hover:scale-105">
-      Login
-    </button>
-    </div>
-    <img className="rounded-lg" src="professional_digital_identification.png" alt="Logo de una tarjeta de identificación digital profesional" />
-    <h1 className="text-blue-800 text-5xl text-center font-bold m-4 w-full">
-    El nuevo modo de identificacion profesional</h1>
-    <h2 className="text-blue-700 text-4xl text-center font-bold">
-    El futuro de las relaciones laborales</h2>
+      <div className="w-1/4">
+        {/* <button  onClick={login} className="card"> */}
+        <button onClick={login} className="w-full p-4 border-2 border-blue-500 rounded-xl bg-stone-200 text-xl text-blue-700 font-bold hover:scale-105">
+          Login
+        </button>
+      </div>
+      <img className="rounded-lg" src="professional_digital_identification.png" alt="Logo de una tarjeta de identificación digital profesional" />
+      <h1 className="text-blue-800 text-5xl text-center font-bold m-4 w-full">
+        El nuevo modo de identificacion profesional</h1>
+      <h2 className="text-blue-700 text-4xl text-center font-bold">
+        El futuro de las relaciones laborales</h2>
     </div>
   );
 
@@ -474,5 +508,4 @@ const handleFormSubmit = (data: CardData, fileURL: string | null) => {
     </div>
   );
 }
-
 export default App;
