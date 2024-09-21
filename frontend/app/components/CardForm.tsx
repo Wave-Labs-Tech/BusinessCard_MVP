@@ -5,6 +5,7 @@ import {
     handlePhoneNumberChange as handlePhoneNumberChangeFromUtils, handlePhoneNumberBlur,
     validateUrls
 } from "../utils/Utils";
+import { compressImage } from "../utils/CompressImage";
 // import { handlePhoneNumberChange as handlePhoneNumberChangeFromUtils } from "../utils/Utils";
 import { CardData } from '../../types';
 
@@ -43,38 +44,60 @@ const CardForm: React.FC<CardFormProps> = ({ onSubmit }) => {
     const [message, updateMessage] = useState('');
     const [fileURL, setFileURL] = useState<string | null>(null);
     // const [formParams, updateFormParams] = useState({ name: '', cargo: '', descripcion: '', telefono: '+', email: ''});
+    const [originalUrl, setOriginalUrl] = useState<string | null>(null);
+    const [compressedPreviewUrl, setCompressedPreviewUrl] = useState<string | null>(null);
 
     //This function uploads the NFT image to IPFS
     async function OnChangeFile(e: React.FormEvent<HTMLInputElement>) {
-        const fileInput = e.target as HTMLInputElement; // Afirmación de tipo
-        const file = fileInput.files?.[0]; // Usa el operador de encadenamiento opcional
-
-        //check for file extension
         try {
-            //upload the file to IPFS
-            // disableButton();
-            updateMessage("Uploading image.. please dont click anything!")
-            if (file) {
-                //   const response = await uploadFileToIPFS(file);//DESACTIVADO durante el desarrollo
-                const response = {
-                    success: true,
-                    pinataURL: "https://gateway.pinata.cloud/ipfs/QmSRkTj5rrUUJcPPFcVrRMgdKKtdikkgZ4igVLe6i3dNXy",
-                };
-                if (response.success === true) {
-                    // enableButton();
-                    updateMessage("")
-                    console.log("Uploaded image to Pinata: ", response.pinataURL)
-                    // Verifica que response.pinataURL no sea undefined
-                    if (response.pinataURL) {
-                        setFileURL(response.pinataURL);
-                        console.log("fileURL updated:", response.pinataURL);
+            const fileInput = e.target as HTMLInputElement; // Afirmación de tipo
+            const file = fileInput.files?.[0]; // Usa el operador de encadenamiento opcional
+            // console.log("file en inicio de OnChangeFile: ", file)
+
+            //check for file extension
+            try {
+                //upload the file to IPFS
+                // disableButton();
+                if (!file) return;
+                const compressedImage = await compressImage(file, 1200, 1200);
+                // console.log("compressedImage: ", compressedImage)
+                console.log("Tamaño original:", file.size, "bytes");
+                console.log("Tamaño comprimido:", compressedImage.size, "bytes");
+
+                //ELIMINAR, comprobaciones de prueba
+                // const originalUrl = URL.createObjectURL(file);
+                // setOriginalUrl(originalUrl);
+                const compressedUrl = URL.createObjectURL(compressedImage);
+                setCompressedPreviewUrl(compressedUrl);
+
+                // console.log("URL imagen original:", originalUrl);
+                console.log("URL imagen comprimida:", compressedUrl);
+
+                updateMessage("Uploading image.. please dont click anything!")
+                if (file) {
+                    //   const response = await uploadFileToIPFS(compressedImage);//DESACTIVADO durante el desarrollo
+                    const response = {
+                        success: true,
+                        pinataURL: "https://gateway.pinata.cloud/ipfs/QmSRkTj5rrUUJcPPFcVrRMgdKKtdikkgZ4igVLe6i3dNXy",
+                    };
+                    if (response.success === true) {
+                        // enableButton();
+                        updateMessage("")
+                        console.log("Uploaded image to Pinata: ", response.pinataURL)
+                        // Verifica que response.pinataURL no sea undefined
+                        if (response.pinataURL) {
+                            setFileURL(response.pinataURL);
+                            console.log("fileURL updated:", response.pinataURL);
+                        }
                     }
                 }
             }
-        }
-        catch (e) {
-            console.log("Error during file upload", e);
-            updateMessage("Error uploading image")
+            catch (e) {
+                console.log("Error during file upload", e);
+                updateMessage("Error uploading image")
+            }
+        } catch (error) {
+            console.error("Error en OnChangeFile:", error);
         }
     }
 
@@ -112,7 +135,7 @@ const CardForm: React.FC<CardFormProps> = ({ onSubmit }) => {
         //     }
         console.log("formparams y fileurl en CardForm", formParams, fileURL);
         const { isValid, invalidUrls } = validateUrls(formParams.urls);
-        console.log("isValid, invalidUrls ", isValid, invalidUrls );
+        console.log("isValid, invalidUrls ", isValid, invalidUrls);
         if (!isValid) {
             updateMessage(`Las siguientes URLs no son válidas: ${invalidUrls.join(', ')}`);
             return;
@@ -201,7 +224,7 @@ const CardForm: React.FC<CardFormProps> = ({ onSubmit }) => {
                 <div className="text-red-500 text-center">{message}</div>
                 <div className="flex gap-2 text-sm md:text-lg">
                     <button type="submit" disabled={!formParams || !fileURL}
-                    className="font-bold mt-10 w-4/5 bg-blue-500 text-white rounded p-2 shadow-lg" id="list-button">
+                        className="font-bold mt-10 w-4/5 bg-blue-500 text-white rounded p-2 shadow-lg" id="list-button">
                         Crear Card
                     </button>
                     <button onClick={handleCancel} className="font-bold mt-10 w-1/5 bg-red-600 text-white rounded p-2 shadow-lg" id="list-button">
@@ -212,6 +235,14 @@ const CardForm: React.FC<CardFormProps> = ({ onSubmit }) => {
                     Crear Card
                 </button> */}
             </form>
+            <div className="flex flex-col justify-center text-center font-bold mt-4 gap-2">
+                {compressedPreviewUrl && (
+                    <>
+                        <h3>Vista previa de la imagen comprimida</h3>
+                        <img src={compressedPreviewUrl} alt="Vista previa comprimida" style={{ width: 'auto' }} />
+                    </>
+                )}
+            </div>
         </div>
     );
 }
