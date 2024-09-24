@@ -8,10 +8,12 @@ import { Card } from "./models/Card.sol";
 import { CardDataInit } from "./models/CardDataInit.sol";
 import { Company } from "./models/Company.sol";
 import { CompanyInit } from "./models/CompanyInit.sol";
-import { Contact } from "./models/Contact.sol";
+import { Connection } from "./models/Connection.sol";
+import { ConnectionType } from "./enums/ConnectionType.sol";
 import { Id } from "./models/Id.sol";
 import { PrivateInfoCard } from "./models/PrivateInfoCard.sol";
 import { PublicInfoCard } from "./models/PublicInfoCard.sol";
+
 
 /**
  * @title Business Card Contract
@@ -79,7 +81,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     mapping(address => Card) private cards;
     mapping(address => Id) private companiesId;
     mapping(uint16 => Company) private companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
-    mapping(address => mapping(address => bool)) private contacts; // Tracks if a card was shared with another address
+    mapping(address => mapping(address => Connection[])) private contacts; // Tracks if a card was shared with another address
 
     /////// Getters ////////////////////
 
@@ -207,7 +209,12 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      */
     function shareMyCard(address to_) public {
         assert(cards[msg.sender].exists);
-        contacts[msg.sender][to_] = true;
+        assert(contacts[msg.sender][to_].length == 0);
+        Connection memory newConnection = Connection({
+            timestamp: block.timestamp,
+            kind: ConnectionType.Share
+        });
+        contacts[msg.sender][to_].push(newConnection);
         emit SharedCard(msg.sender, to_);
     }
 
@@ -234,7 +241,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @param cardOwner The address of the card owner whose information will be retrieved.
      */
     function readCard(address cardOwner) public view returns(string memory) {
-        if(contacts[cardOwner][msg.sender]){
+        if(contacts[cardOwner][msg.sender].length > 0){
             return cards[cardOwner].privateInfoURL;
         }
         return "";
