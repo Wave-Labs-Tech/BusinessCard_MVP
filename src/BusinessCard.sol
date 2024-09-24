@@ -234,9 +234,8 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @param cardOwner The address of the card owner whose information will be retrieved.
      */
     function readCard(address cardOwner) public view returns(string memory) {
-        Card memory card =cards[cardOwner];
         if(contacts[cardOwner][msg.sender]){
-            return card.privateInfoURL;
+            return cards[cardOwner].privateInfoURL;
         }
         return "";
     }
