@@ -274,5 +274,4 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         emit CardCreated(to,lastCardId);
     }
 
-
 }
