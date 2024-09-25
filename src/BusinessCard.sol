@@ -43,7 +43,12 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     uint256 feeCreateCompany;
 
 
-    //////////// Modifiers ///////////////
+    mapping(address => Card) private cards;
+    mapping(address => Id) private companiesId;
+    mapping(uint16 => Company) private companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
+    mapping(address => mapping(address => Connection[])) private contacts; // Tracks if a card was shared with another address
+
+    ///////////////////////////////////// Modifiers /////////////////////////////////////////////////
 
     /**
      * @dev Ensures that only registered companies can call certain functions.
@@ -63,6 +68,20 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     }
 
     /**
+     * @dev Ensures that there is an established contact between two addresses.
+     * The modifier checks if both addresses have a non-zero length of contacts 
+     * between them, meaning they have mutually exchanged contact information.
+     * Reverts if there is no connection between the two addresses.
+     * @param a_ The first address to check.
+     * @param b_ The second address to check.
+     */
+    modifier onlyBetweenContact(address a_, address b_) {
+        require(contacts[a_][b_].length != 0 && contacts[b_][a_].length != 0);
+        _;
+    }
+    ///////////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
      * @notice Constructor for the Business Card contract.
      * @dev Initializes the ERC721 contract with the token name "Business Card" and symbol "BCARD".
      */
@@ -76,14 +95,40 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         return super.supportsInterface(interfaceId);
     }
 
+    //////////////////////////////////////////// Getters //////////////////////////////////////////////
+
+    /**
+     * @notice Retrieves the business card information of a given address.
+     * @dev If the caller is not a contact of the card owner, private information (phone and email) will be hidden.
+     * @param cardOwner The address of the card owner whose information will be retrieved.
+     */
+    function getContactInfoCard(address cardOwner) public view returns(string memory) {
+        if(contacts[cardOwner][msg.sender].length > 0){
+            return cards[cardOwner].privateInfoURL;
+        }
+        return "";
+    }
     
+    /**
+     * @notice Retrieves the business card information of the caller.
+     * @dev This function returns the full business card data for the caller's own address.
+     * It includes both public and private information, such as phone and email.
+     * @return The complete business card data of the caller.
+     */
+    function getMyCard() public view returns(Card memory) {
+        return cards[msg.sender];
+    }
 
-    mapping(address => Card) private cards;
-    mapping(address => Id) private companiesId;
-    mapping(uint16 => Company) private companies; // The key is the ID field from the ID struct related to the owner's address in companiesID
-    mapping(address => mapping(address => Connection[])) private contacts; // Tracks if a card was shared with another address
-
-    /////// Getters ////////////////////
+    /**
+    * @notice Checks if the provided address is a mutual contact of the sender.
+    * @dev This function checks if there is a bidirectional connection between the sender and the given address.
+    * A mutual contact means both addresses have exchanged their business cards with each other.
+    * @param c_ The address to check if it's a mutual contact with the sender.
+    * @return bool Returns true if there is a mutual contact; otherwise, false.
+    */
+    function isMyContact(address c_) public view returns(bool) {
+        return contacts[msg.sender][c_].length != 0 && contacts[c_][msg.sender].length != 0 ? true : false;
+    }
 
     /**
      * @notice Get the ID of the company associated with the sender.
@@ -94,15 +139,12 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         return companiesId[msg.sender].id;
     }
 
-    // /**
-    //  * @notice Get the name of a company by its ID.
-    //  * @param id_ The ID of the company.
-    //  * @return The name of the company.
-    //  */
-    // function getCompanyName(uint16 id_) public view returns(string memory) {
-    //     return companies[id_].initValues.companyName;
-    // }
-
+    /**
+    * @notice Retrieves the company profile associated with the caller's address.
+    * @dev This function returns the company data for the caller based on their registered company ID.
+    * It pulls the company information from the `companies` mapping using the caller's ID stored in `companiesId`.
+    * @return The company profile associated with the caller.
+    */
     function getMyCompany() public view returns(Company memory) {
         return companies[companiesId[msg.sender].id];
     }
@@ -116,24 +158,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         return companies[id_].companyEmployees;
     }
 
-    // /**
-    //  * @notice Get the ID of the card owned by the sender.
-    //  * @return The ID of the sender's card.
-    //  */
-    // function getMyCardId() public view returns(uint256){
-    //     return cards[msg.sender].publicInfo.cardId;
-    // }
-
-    ////////////////////////////////////////////////////
-
-    /**
-     * @notice Set the fee required to create a new company profile.
-     * @dev Only callable by the contract owner.
-     * @param _fee The new fee amount in wei.
-     */
-    function setFeeCreateCompany(uint256 _fee) public onlyOwner {
-        feeCreateCompany = _fee;
-    }
+    ///////////////////////////////////////  Setters  /////////////////////////////////////////////
 
     /**
      * @notice Create a new company profile linked to the sender's address.
@@ -210,12 +235,26 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function shareMyCard(address to_) public {
         assert(cards[msg.sender].exists);
         assert(contacts[msg.sender][to_].length == 0);
+        //Si to_ habia compartido previamente la Card con el sender, se completa la conexion y se incrementan los contadores de contactos de ambos
+        if(contacts[to_][msg.sender].length > 0){   
+            cards[msg.sender].numberOfContacts += 1;
+            cards[to_].numberOfContacts += 1;
+        }
         Connection memory newConnection = Connection({
             timestamp: block.timestamp,
             kind: ConnectionType.Share
         });
         contacts[msg.sender][to_].push(newConnection);
         emit SharedCard(msg.sender, to_);
+    }
+
+    /**
+     * @notice Set the fee required to create a new company profile.
+     * @dev Only callable by the contract owner.
+     * @param _fee The new fee amount in wei.
+     */
+    function setFeeCreateCompany(uint256 _fee) public onlyOwner {
+        feeCreateCompany = _fee;
     }
 
     /**
@@ -235,16 +274,5 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         emit CardCreated(to,lastCardId);
     }
 
-    /**
-     * @notice Retrieves the business card information of a given address.
-     * @dev If the caller is not a contact of the card owner, private information (phone and email) will be hidden.
-     * @param cardOwner The address of the card owner whose information will be retrieved.
-     */
-    function readCard(address cardOwner) public view returns(string memory) {
-        if(contacts[cardOwner][msg.sender].length > 0){
-            return cards[cardOwner].privateInfoURL;
-        }
-        return "";
-    }
 
 }
