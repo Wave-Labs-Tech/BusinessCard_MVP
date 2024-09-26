@@ -9,5 +9,6 @@ struct Card {
     uint32 companyID;
     uint32 numberOfContacts;
     uint64 score;
+    uint256 tokenId;
     string privateInfoURL;
 }

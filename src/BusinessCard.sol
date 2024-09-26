@@ -41,6 +41,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     uint16 lastCompanyId;
     uint256 lastCardId;
     uint256 feeCreateCompany;
+    address[] publishCards;
 
 
     mapping(address => Card) private cards;
@@ -91,6 +92,11 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         return super.tokenURI(tokenId);
     }
 
+    function tokenUriByAddress(address owner) public view returns(string memory) {
+        require(cards[owner].exists, "The address provided does not have any associated card.");
+        return tokenURI(cards[owner].tokenId);
+    }
+
     function supportsInterface(bytes4 interfaceId) public view override(ERC721, ERC721URIStorage) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
@@ -129,6 +135,13 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function isMyContact(address c_) public view returns(bool) {
         return contacts[msg.sender][c_].length != 0 && contacts[c_][msg.sender].length != 0 ? true : false;
     }
+
+    // function getMyContacts() public view return (address, strings[]) {
+    //     string[] result;
+    //     for(user in contacts[msg.sender]){
+    //         if(isMyContact(user))
+    //     }
+    // }
     
     function getContactQtyByOwner(address card) public view returns(uint32) {
         require(cards[card].exists, "The address provided does not have any associated card.");
@@ -164,6 +177,14 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
 
     function getCompanyByOwner(address owner_) public view returns(Company memory) {
         return companies[companiesId[owner_].id];
+    }
+
+    function getPublicCards() public view returns(string[] memory) {
+        string[] memory result = new string[](publishCards.length);
+        for (uint i = 0; i < publishCards.length; i++) {
+            result[i] = tokenUriByAddress(publishCards[i]);
+        }
+        return result;
     }
 
     ///////////////////////////////////////  Setters  /////////////////////////////////////////////
@@ -235,6 +256,26 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     //     _safeCreateCard(tokenURI_,privateInfoURL_ , msg.sender, 0);
     // }
 
+    function setVisibilityCard(bool visibility) public {
+        require(cards[msg.sender].exists, "There is no Card associated with your address");
+        if (visibility) {
+            for (uint i = 0; i < publishCards.length; i++) {
+                if (msg.sender == publishCards[i]) {
+                    return;
+                }
+            }
+            publishCards.push(msg.sender);
+        } else {
+            for (uint i = 0; i < publishCards.length; i++) {
+                if (msg.sender == publishCards[i]) {
+                    publishCards[i] = publishCards[publishCards.length - 1]; // Mover el último elemento al lugar de i
+                    publishCards.pop();
+                    return;
+                }
+            }
+        }
+    }
+
     /**
      * @notice Share the sender's business card with another address.
      * @dev The card must exist for the sender.
@@ -273,6 +314,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function _safeCreateCard(string memory tokenURI_, string memory privateInfoURL, address to, uint16 companyId_) private {
         lastCardId++;
         Card memory newCard;
+        newCard.tokenId = lastCardId++;
         newCard.privateInfoURL = privateInfoURL;
         newCard.companyID = companyId_;
         newCard.exists = true;
