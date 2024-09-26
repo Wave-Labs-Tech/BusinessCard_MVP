@@ -17,11 +17,12 @@ import {Connection} from "../src/models/Connection.sol";
 contract BusinnesCardTest is Test {
     BusinessCard businessCard;
     address owner = address(0x1); // Owner inicial
-    address aliceAddress = address(0x2); // Usuario para tests
-    address companyAddress = address(0x3); // Dirección para crear una compañía
-    address employed1 = address(0x4);
-    address employed2 = address(0x5);
-    address notCompanyAddress = address(0x6);
+    address aliceAddress = address(0x2);
+    address bobAddress = address(0x3);
+    address companyAddress = address(0x4); // Dirección para crear una compañía
+    address employed1 = address(0x5);
+    address employed2 = address(0x6);
+    address notCompanyAddress = address(0x7);
     string publicCompanyDataCid = "1111111111111111111";
     string privateCompanyDataCid = "2222222222222222222";
     string publicCardDataCid = "33333333333333333333333";
@@ -58,8 +59,12 @@ contract BusinnesCardTest is Test {
         vm.expectRevert("Only registered companies");
         businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed1);
 
-        vm.prank(companyAddress);
+        vm.startPrank(companyAddress);
         businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed1);
+
+        vm.expectRevert("Address already has Card");
+        businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed1);
+        vm.stopPrank();
         
         vm.prank(employed1);
         vm.assertEq(businessCard.getMyCard().privateInfoURL, privateCardDataCid);
@@ -101,5 +106,33 @@ contract BusinnesCardTest is Test {
         vm.assertEq(businessCard.getContactInfoCard(employed1), privateCardDataCid);
         
         vm.assertEq(businessCard.tokenUriByAddress(employed2),publicCardDataCid);
+    }
+    function testSetVisibility() public {
+        vm.prank(owner);
+        businessCard.createForCompany(
+            CompanyInit({
+                publicDataCid: publicCompanyDataCid,
+                privateDataCid: privateCompanyDataCid}),
+            companyAddress);
+
+        vm.startPrank(companyAddress);
+        businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed1);
+        businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed2);
+        businessCard.createCardFor(publicCardDataCid, privateCardDataCid, aliceAddress);
+        vm.stopPrank();
+
+        vm.assertEq(businessCard.getPublicCards().length, 0);
+
+        vm.prank(bobAddress);
+        vm.expectRevert("There is no Card associated with your address");
+        businessCard.setVisibilityCard(true);
+
+        vm.prank(employed1);
+        businessCard.setVisibilityCard(true);
+        vm.assertEq(businessCard.getPublicCards().length, 1);
+
+
+
+
     }
 }

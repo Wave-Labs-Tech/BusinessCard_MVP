@@ -41,7 +41,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     uint16 lastCompanyId;
     uint256 lastCardId;
     uint256 feeCreateCompany;
-    uint256[] publishCards;
+    uint256[] publishCards; // TokenIDs
 
 
     mapping(address => Card) private cards;
@@ -191,7 +191,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function getPublicCards() public view returns(string[] memory) {
         string[] memory result = new string[](publishCards.length);
         for (uint i = 0; i < publishCards.length; i++) {
-            result[i] = tokenURI(i);
+            result[i] = tokenURI(publishCards[i]);
         }
         return result;
     }
@@ -353,8 +353,9 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @param to The address for which the card is being created.
      */
     function _safeCreateCard(string memory tokenURI_, string memory privateInfoURL, address to, uint16 companyId_) private {
+        lastCardId++;
         Card memory newCard;
-        newCard.tokenId = ++lastCardId;
+        newCard.tokenId = lastCardId;
         newCard.privateInfoURL = privateInfoURL;
         newCard.companyID = companyId_;
         newCard.exists = true;
