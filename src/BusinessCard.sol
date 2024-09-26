@@ -41,7 +41,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     uint16 lastCompanyId;
     uint256 lastCardId;
     uint256 feeCreateCompany;
-    address[] publishCards;
+    uint256[] publishCards;
 
 
     mapping(address => Card) private cards;
@@ -76,7 +76,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @param a_ The first address to check.
      * @param b_ The second address to check.
      */
-    modifier onlyBetweenContact(address a_, address b_) {
+    modifier onlyBetweenContacts(address a_, address b_) {
         require(contacts[a_][b_].length != 0 && contacts[b_][a_].length != 0);
         _;
     }
@@ -191,7 +191,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function getPublicCards() public view returns(string[] memory) {
         string[] memory result = new string[](publishCards.length);
         for (uint i = 0; i < publishCards.length; i++) {
-            result[i] = tokenUriByAddress(publishCards[i]);
+            result[i] = tokenURI(i);
         }
         return result;
     }
@@ -268,26 +268,26 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     // }
 
     /////////////////////////  Non transferable tokens. Override transfer funciotns ///////////////////
+    /**
+     * @dev Overrides the transferFrom function to disable transfers.
+     */
+    function transferFrom(address, address, uint256) public pure override(IERC721, ERC721){
+        revert("NFTs are non-transferable");
+    }
+
     // /**
     //  * @dev Overrides the transferFrom function to disable transfers.
     //  */
-    // function transferFrom(address from, address to, uint256 tokenId) public override(IERC721, ERC721){
+    // function safeTransferFrom(address from, address to, uint256 tokenId) public override(IERC721, ERC721) {
     //     revert("NFTs are non-transferable");
     // }
 
-    // // /**
-    // //  * @dev Sobrescribe la función safeTransferFrom para prevenir transferencias.
-    // //  */
-    // // function safeTransferFrom(address from, address to, uint256 tokenId) public override(IERC721, ERC721) {
-    // //     revert("NFTs are non-transferable");
-    // // }
-
-    // /**
-    //  * @dev Sobrescribe la función safeTransferFrom con datos adicionales para prevenir transferencias.
-    //  */
-    // function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override(IERC721, ERC721) {
-    //     revert("NFTs are non-transferable");
-    // }
+    /**
+     * @dev Override the safeTransferFrom function with additional data to disable transfers.
+     */
+    function safeTransferFrom(address, address, uint256, bytes memory) public pure override(IERC721, ERC721) {
+        revert("NFTs are non-transferable");
+    }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -301,14 +301,14 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         require(cards[msg.sender].exists, "There is no Card associated with your address");
         if (visibility) {
             for (uint i = 0; i < publishCards.length; i++) {
-                if (msg.sender == publishCards[i]) {
+                if (cards[msg.sender].tokenId == publishCards[i]) {
                     return;
                 }
             }
-            publishCards.push(msg.sender);
+            publishCards.push(cards[msg.sender].tokenId);
         } else {
             for (uint i = 0; i < publishCards.length; i++) {
-                if (msg.sender == publishCards[i]) {
+                if (cards[msg.sender].tokenId == publishCards[i]) {
                     publishCards[i] = publishCards[publishCards.length - 1]; // Mover el último elemento al lugar de i
                     publishCards.pop();
                     return;
@@ -353,7 +353,6 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @param to The address for which the card is being created.
      */
     function _safeCreateCard(string memory tokenURI_, string memory privateInfoURL, address to, uint16 companyId_) private {
-        // lastCardId++;
         Card memory newCard;
         newCard.tokenId = ++lastCardId;
         newCard.privateInfoURL = privateInfoURL;
