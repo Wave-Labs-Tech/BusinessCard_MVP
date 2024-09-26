@@ -22,10 +22,10 @@ contract BusinnesCardTest is Test {
     address employed1 = address(0x4);
     address employed2 = address(0x5);
     address notCompanyAddress = address(0x6);
-    string publicCompanyDataCid = "73256283d74628374628347";
-    string privateCompanyDataCid = "98347094587236095689847";
-    string publicCardDataCid = "732564746283746248347";
-    string privateCardDataCid = "98343094587236095689847";
+    string publicCompanyDataCid = "1111111111111111111";
+    string privateCompanyDataCid = "2222222222222222222";
+    string publicCardDataCid = "33333333333333333333333";
+    string privateCardDataCid = "44444444444444444444444";
 
     function setUp() public {
         vm.startPrank(owner);
