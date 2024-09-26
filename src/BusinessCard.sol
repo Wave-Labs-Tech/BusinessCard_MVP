@@ -129,7 +129,11 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function isMyContact(address c_) public view returns(bool) {
         return contacts[msg.sender][c_].length != 0 && contacts[c_][msg.sender].length != 0 ? true : false;
     }
-
+    
+    function getContactQtyByOwner(address card) public view returns(uint32) {
+        require(cards[card].exists, "The address provided does not have any associated card.");
+        return cards[card].numberOfContacts;
+    }
     /**
      * @notice Get the ID of the company associated with the sender.
      * @dev Only callable by registered companies.
@@ -156,6 +160,10 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      */
     function getEmployedQty(uint16 id_) public view returns(uint16) {
         return companies[id_].companyEmployees;
+    }
+
+    function getCompanyByOwner(address owner_) public view returns(Company memory) {
+        return companies[companiesId[owner_].id];
     }
 
     ///////////////////////////////////////  Setters  /////////////////////////////////////////////
@@ -234,7 +242,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      */
     function shareMyCard(address to_) public {
         assert(cards[msg.sender].exists);
-        assert(contacts[msg.sender][to_].length == 0);
+        require(contacts[msg.sender][to_].length == 0, "You have already shared the Card with that user");
         //Si to_ habia compartido previamente la Card con el sender, se completa la conexion y se incrementan los contadores de contactos de ambos
         if(contacts[to_][msg.sender].length > 0){   
             cards[msg.sender].numberOfContacts += 1;

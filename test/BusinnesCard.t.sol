@@ -22,6 +22,10 @@ contract BusinnesCardTest is Test {
     address employed1 = address(0x4);
     address employed2 = address(0x5);
     address notCompanyAddress = address(0x6);
+    string publicCompanyDataCid = "73256283d74628374628347";
+    string privateCompanyDataCid = "98347094587236095689847";
+    string publicCardDataCid = "732564746283746248347";
+    string privateCardDataCid = "98343094587236095689847";
 
     function setUp() public {
         vm.startPrank(owner);
@@ -30,24 +34,71 @@ contract BusinnesCardTest is Test {
         vm.stopPrank();
     }
 
-    function createCompany() private {
+    function testCreateForCompany() public {
+        vm.prank(owner);
+        businessCard.createForCompany(
+            CompanyInit({
+                publicDataCid: publicCompanyDataCid,
+                privateDataCid: privateCompanyDataCid}),
+            companyAddress);
         
-    }
-
-    function testCreateCompany() public {
-        
-        
-    }
-
-    function testCreateCompanyAndCard() public {
-       
+        vm.assertEq(businessCard.getCompanyByOwner(companyAddress).initValues.publicDataCid, publicCompanyDataCid);
+        vm.prank(companyAddress);
+        vm.assertEq(businessCard.getMyCompany().initValues.publicDataCid, publicCompanyDataCid);
     }
 
     function testCreateCardForEmployed() public {
+        vm.prank(owner);
+        businessCard.createForCompany(
+            CompanyInit({
+                publicDataCid: publicCompanyDataCid,
+                privateDataCid: privateCompanyDataCid}),
+            companyAddress);
 
+        vm.expectRevert("Only registered companies");
+        businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed1);
+
+        vm.prank(companyAddress);
+        businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed1);
+        
+        vm.prank(employed1);
+        vm.assertEq(businessCard.getMyCard().privateInfoURL, privateCardDataCid);
     }
 
-    function testShareMyCard_ReadCard() public {
-  
+    function testShareMyCardAndIsMyContact() public {
+        vm.prank(owner);
+        businessCard.createForCompany(
+            CompanyInit({
+                publicDataCid: publicCompanyDataCid,
+                privateDataCid: privateCompanyDataCid}),
+            companyAddress);
+
+        vm.startPrank(companyAddress);
+        businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed1);
+        businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed2);
+        vm.stopPrank();
+        vm.startPrank(employed1);
+        businessCard.shareMyCard(employed2);
+        vm.assertEq(businessCard.isMyContact(employed2), false);
+        vm.stopPrank();
+        vm.startPrank(employed2);
+        businessCard.shareMyCard(employed1);
+
+        vm.expectRevert("You have already shared the Card with that user");
+        businessCard.shareMyCard(employed1);
+
+        vm.assertEq(businessCard.isMyContact(employed1), true);
+        vm.stopPrank();
+        vm.prank(employed1);
+        vm.assertEq(businessCard.isMyContact(employed2), true);
+
+        vm.assertEq(businessCard.getContactQtyByOwner(employed1), 1);
+        assert(businessCard.getContactQtyByOwner(employed1) != 2);
+
+        vm.assertEq(businessCard.getContactInfoCard(employed1), "");
+
+        vm.prank(employed2);
+        vm.assertEq(businessCard.getContactInfoCard(employed1), privateCardDataCid);
+        
     }
 }
