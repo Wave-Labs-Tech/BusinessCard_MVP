@@ -100,5 +100,6 @@ contract BusinnesCardTest is Test {
         vm.prank(employed2);
         vm.assertEq(businessCard.getContactInfoCard(employed1), privateCardDataCid);
         
+        vm.assertEq(businessCard.tokenUriByAddress(employed2),publicCardDataCid);
     }
 }

@@ -109,6 +109,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @param cardOwner The address of the card owner whose information will be retrieved.
      */
     function getContactInfoCard(address cardOwner) public view returns(string memory) {
+        require(cards[cardOwner].exists, "The address provided does not have any associated card.");
         if(contacts[cardOwner][msg.sender].length > 0){
             return cards[cardOwner].privateInfoURL;
         }
@@ -122,6 +123,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @return The complete business card data of the caller.
      */
     function getMyCard() public view returns(Card memory) {
+        require(cards[msg.sender].exists, "Sender not have Card");
         return cards[msg.sender];
     }
 
@@ -133,6 +135,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @return bool Returns true if there is a mutual contact; otherwise, false.
      */
     function isMyContact(address c_) public view returns(bool) {
+        require(cards[msg.sender].exists, "Sender not have Card");
         return contacts[msg.sender][c_].length != 0 && contacts[c_][msg.sender].length != 0 ? true : false;
     }
     
@@ -155,7 +158,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * It pulls the company information from the `companies` mapping using the caller's ID stored in `companiesId`.
      * @return The company profile associated with the caller.
      */
-    function getMyCompany() public view returns(Company memory) {
+    function getMyCompany() public view onlyCompanies returns(Company memory) {
         return companies[companiesId[msg.sender].id];
     }
 
@@ -165,6 +168,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @return The number of employees in the company.
      */
     function getEmployedQty(uint16 id_) public view returns(uint16) {
+        require(companies[id_].exists , "The id provided does not have any associated Company.");
         return companies[id_].companyEmployees;
     }
 
@@ -175,6 +179,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @return The company struct associated with the given owner.
      */
     function getCompanyByOwner(address owner_) public view returns(Company memory) {
+        require(companiesId[owner_].id != 0, "The address provided does not have any associated Company.");
         return companies[companiesId[owner_].id];
     }
 
@@ -210,7 +215,8 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
             initValues: initValues_,
             companyEmployees: 0,
             scoring: 0,
-            verified: false
+            verified: false,
+            exists: true
         });
         lastCompanyId++;
         companiesId[msg.sender] = Id({id: lastCompanyId, exists: true});
@@ -232,7 +238,8 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
             initValues: initValues_,
             companyEmployees: 0,
             scoring: 0,
-            verified: false
+            verified: false,
+            exists: true
         });
         lastCompanyId++;
         companiesId[to_] = Id({id: lastCompanyId, exists: true});
@@ -259,6 +266,30 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     //     // uint16 companyId = 0; //Not belonging to any company
     //     _safeCreateCard(tokenURI_,privateInfoURL_ , msg.sender, 0);
     // }
+
+    /////////////////////////  Non transferable tokens. Override transfer funciotns ///////////////////
+    // /**
+    //  * @dev Overrides the transferFrom function to disable transfers.
+    //  */
+    // function transferFrom(address from, address to, uint256 tokenId) public override(IERC721, ERC721){
+    //     revert("NFTs are non-transferable");
+    // }
+
+    // // /**
+    // //  * @dev Sobrescribe la función safeTransferFrom para prevenir transferencias.
+    // //  */
+    // // function safeTransferFrom(address from, address to, uint256 tokenId) public override(IERC721, ERC721) {
+    // //     revert("NFTs are non-transferable");
+    // // }
+
+    // /**
+    //  * @dev Sobrescribe la función safeTransferFrom con datos adicionales para prevenir transferencias.
+    //  */
+    // function safeTransferFrom(address from, address to, uint256 tokenId, bytes memory _data) public override(IERC721, ERC721) {
+    //     revert("NFTs are non-transferable");
+    // }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /**
      * @notice Sets the visibility of the sender's business card.
@@ -322,9 +353,9 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @param to The address for which the card is being created.
      */
     function _safeCreateCard(string memory tokenURI_, string memory privateInfoURL, address to, uint16 companyId_) private {
-        lastCardId++;
+        // lastCardId++;
         Card memory newCard;
-        newCard.tokenId = lastCardId++;
+        newCard.tokenId = ++lastCardId;
         newCard.privateInfoURL = privateInfoURL;
         newCard.companyID = companyId_;
         newCard.exists = true;
