@@ -120,12 +120,12 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     }
 
     /**
-    * @notice Checks if the provided address is a mutual contact of the sender.
-    * @dev This function checks if there is a bidirectional connection between the sender and the given address.
-    * A mutual contact means both addresses have exchanged their business cards with each other.
-    * @param c_ The address to check if it's a mutual contact with the sender.
-    * @return bool Returns true if there is a mutual contact; otherwise, false.
-    */
+     * @notice Checks if the provided address is a mutual contact of the sender.
+     * @dev This function checks if there is a bidirectional connection between the sender and the given address.
+     * A mutual contact means both addresses have exchanged their business cards with each other.
+     * @param c_ The address to check if it's a mutual contact with the sender.
+     * @return bool Returns true if there is a mutual contact; otherwise, false.
+     */
     function isMyContact(address c_) public view returns(bool) {
         return contacts[msg.sender][c_].length != 0 && contacts[c_][msg.sender].length != 0 ? true : false;
     }
@@ -144,11 +144,11 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     }
 
     /**
-    * @notice Retrieves the company profile associated with the caller's address.
-    * @dev This function returns the company data for the caller based on their registered company ID.
-    * It pulls the company information from the `companies` mapping using the caller's ID stored in `companiesId`.
-    * @return The company profile associated with the caller.
-    */
+     * @notice Retrieves the company profile associated with the caller's address.
+     * @dev This function returns the company data for the caller based on their registered company ID.
+     * It pulls the company information from the `companies` mapping using the caller's ID stored in `companiesId`.
+     * @return The company profile associated with the caller.
+     */
     function getMyCompany() public view returns(Company memory) {
         return companies[companiesId[msg.sender].id];
     }
