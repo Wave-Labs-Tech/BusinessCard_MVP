@@ -135,13 +135,6 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function isMyContact(address c_) public view returns(bool) {
         return contacts[msg.sender][c_].length != 0 && contacts[c_][msg.sender].length != 0 ? true : false;
     }
-
-    // function getMyContacts() public view return (address, strings[]) {
-    //     string[] result;
-    //     for(user in contacts[msg.sender]){
-    //         if(isMyContact(user))
-    //     }
-    // }
     
     function getContactQtyByOwner(address card) public view returns(uint32) {
         require(cards[card].exists, "The address provided does not have any associated card.");
