@@ -175,10 +175,21 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         return companies[id_].companyEmployees;
     }
 
+    /**
+     * @notice Retrieves the company associated with a given owner's address.
+     * @dev Returns the company that corresponds to the provided owner's address.
+     * @param owner_ The address of the owner whose company is being retrieved.
+     * @return The company struct associated with the given owner.
+     */
     function getCompanyByOwner(address owner_) public view returns(Company memory) {
         return companies[companiesId[owner_].id];
     }
 
+    /**
+     * @notice Retrieves the list of public business cards.
+     * @dev Iterates through the array of public card holders and returns their associated token URIs.
+     * @return An array of strings containing the token URIs of all public business cards.
+     */
     function getPublicCards() public view returns(string[] memory) {
         string[] memory result = new string[](publishCards.length);
         for (uint i = 0; i < publishCards.length; i++) {
@@ -256,6 +267,12 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     //     _safeCreateCard(tokenURI_,privateInfoURL_ , msg.sender, 0);
     // }
 
+    /**
+     * @notice Sets the visibility of the sender's business card.
+     * @dev The card must exist for the sender. If `visibility` is true, the card is added to the list of public cards. 
+     *   If `visibility` is false, the card is removed from the list of public cards.
+     * @param visibility A boolean value indicating whether the sender's card should be visible (true) or not (false).
+     */
     function setVisibilityCard(bool visibility) public {
         require(cards[msg.sender].exists, "There is no Card associated with your address");
         if (visibility) {
