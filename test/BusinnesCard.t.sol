@@ -130,7 +130,16 @@ contract BusinnesCardTest is Test {
         vm.prank(employed1);
         businessCard.setVisibilityCard(true);
         vm.assertEq(businessCard.getPublicCards().length, 1);
-
+        vm.prank(aliceAddress);
+        businessCard.setVisibilityCard(true);
+        vm.prank(aliceAddress);
+        businessCard.setVisibilityCard(true);
+        vm.assertEq(businessCard.getPublicCards().length, 2);
+        vm.prank(employed1);
+        businessCard.setVisibilityCard(false);
+        vm.prank(employed1);
+        businessCard.setVisibilityCard(false);
+        vm.assertEq(businessCard.getPublicCards().length, 1);
 
 
 

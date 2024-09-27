@@ -39,7 +39,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
 
     address constant ZERO_ADDRESS = address(0);
     uint16 lastCompanyId;
-    uint256 lastCardId;
+    uint256 public lastCardId;
     uint256 feeCreateCompany;
     uint256[] publishCards; // TokenIDs
 
