@@ -82,9 +82,15 @@ contract BusinnesCardTest is Test {
         businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed1);
         businessCard.createCardFor(publicCardDataCid, privateCardDataCid, employed2);
         vm.stopPrank();
+
+        vm.expectRevert("Sender not have Card");
+        businessCard.getMyCard();
         vm.startPrank(employed1);
         businessCard.shareMyCard(employed2);
         vm.assertEq(businessCard.isMyContact(employed2), false);
+
+        vm.assertEq(businessCard.getMyCard().privateInfoURL, privateCardDataCid);
+
         vm.stopPrank();
         vm.startPrank(employed2);
         businessCard.shareMyCard(employed1);
