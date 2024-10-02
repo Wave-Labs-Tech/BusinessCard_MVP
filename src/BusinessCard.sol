@@ -317,8 +317,6 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
 
     function deleteMyCard() public addressHaveCard(msg.sender) returns(bool){
         super._burn(cards[msg.sender].tokenId);
-        Card memory blankCard;
-        cards[msg.sender] = blankCard;
         for (uint i = 0; i < publishCards.length; i++) {
             if (cards[msg.sender].tokenId == publishCards[i]) {
                 publishCards[i] = publishCards[publishCards.length - 1];
@@ -326,6 +324,8 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
                 break;
             }
         }
+        Card memory blankCard;
+        cards[msg.sender] = blankCard;
         return true;
     }
 
