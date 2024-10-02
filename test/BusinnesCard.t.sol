@@ -127,27 +127,26 @@ contract BusinnesCardTest is Test {
         businessCard.createCardFor(publicCardDataCid, privateCardDataCid, aliceAddress);
         vm.stopPrank();
 
-        vm.assertEq(businessCard.getPublicCards().length, 0);
+        vm.assertEq(businessCard.getPublicCards().length, 3);
 
         vm.prank(bobAddress);
         vm.expectRevert("There is no Card associated with your address");
         businessCard.setVisibilityCard(true);
 
         vm.prank(employed1);
-        businessCard.setVisibilityCard(true);
+        businessCard.setVisibilityCard(false);
+        vm.assertEq(businessCard.getPublicCards().length, 2);
+        vm.prank(employed2);
+        businessCard.setVisibilityCard(false);
+        vm.prank(employed2);
+        businessCard.setVisibilityCard(false);
         vm.assertEq(businessCard.getPublicCards().length, 1);
-        vm.prank(aliceAddress);
+        vm.assertEq(businessCard.getPublicCards()[0].owner, aliceAddress);
+        vm.prank(employed1);
         businessCard.setVisibilityCard(true);
-        vm.prank(aliceAddress);
+        vm.prank(employed1);
         businessCard.setVisibilityCard(true);
         vm.assertEq(businessCard.getPublicCards().length, 2);
-        vm.prank(employed1);
-        businessCard.setVisibilityCard(false);
-        vm.prank(employed1);
-        businessCard.setVisibilityCard(false);
-        vm.assertEq(businessCard.getPublicCards().length, 1);
-
-
 
     }
 }

@@ -347,7 +347,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         if (visibility) {
             for (uint i = 0; i < publishCards.length; i++) {
                 // Comparar los hashes de las tokenURIs
-                if (keccak256(abi.encodePacked(tokenURI(cards[msg.sender].tokenId))) == keccak256(abi.encodePacked(publishCards[i].tokenURI))) {
+                if (publishCards[i].owner == msg.sender) {
                     return; // La tarjeta ya está en la lista
                 }
             }
@@ -358,7 +358,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         } else {
             for (uint i = 0; i < publishCards.length; i++) {
                 // Compara los hashes de las tokenURIs
-                if (keccak256(abi.encodePacked(tokenURI(cards[msg.sender].tokenId))) == keccak256(abi.encodePacked(publishCards[i].tokenURI))) {
+                if (publishCards[i].owner == msg.sender) {
                     publishCards[i] = publishCards[publishCards.length - 1]; // Mover el último elemento al lugar de i
                     publishCards.pop(); // Eliminar el último elemento
                     return;
