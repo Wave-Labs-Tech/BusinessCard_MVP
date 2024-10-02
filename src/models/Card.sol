@@ -5,7 +5,6 @@ import { PublicInfoCard } from "./PublicInfoCard.sol";
 import { PrivateInfoCard } from "./PrivateInfoCard.sol";
 
 struct Card {
-    address owner;
     bool exists;
     uint32 companyID;
     uint32 numberOfContacts;

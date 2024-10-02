@@ -405,7 +405,6 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function _safeCreateCard(string memory tokenURI_, string memory privateInfoURL, address to, uint16 companyId_) private {
         lastCardId++;
         Card memory newCard;
-        newCard.owner = to;
         newCard.tokenId = lastCardId;
         newCard.privateInfoURL = privateInfoURL;
         newCard.companyID = companyId_;
