@@ -142,11 +142,22 @@ contract BusinnesCardTest is Test {
         businessCard.setVisibilityCard(false);
         vm.assertEq(businessCard.getPublicCards().length, 1);
         vm.assertEq(businessCard.getPublicCards()[0].owner, aliceAddress);
+
+        // Queda solo Alice en la lista de cards publicas
+        
+        vm.assertEq(businessCard.getPublicCards()[0].owner, aliceAddress);
+
+        address a = businessCard.getPublicCards()[0].owner;
+        
         vm.prank(employed1);
-        businessCard.setVisibilityCard(true);
-        vm.prank(employed1);
-        businessCard.setVisibilityCard(true);
-        vm.assertEq(businessCard.getPublicCards().length, 2);
+        businessCard.shareMyCard(a);
+
+        vm.prank(aliceAddress);
+        businessCard.shareMyCard(employed1);
+
+       vm.assertEq(businessCard.getCardByAddress(employed1).numberOfContacts, 1);
+
 
     }
+
 }
