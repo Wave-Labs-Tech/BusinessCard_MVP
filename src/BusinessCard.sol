@@ -41,7 +41,14 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     uint16 lastCompanyId;
     uint256 public lastCardId;
     uint256 feeCreateCompany;
-    uint256[] publishCards; // TokenIDs
+    ///// Pasar a un modelo aparte /////////
+    struct PublicCard {
+        address owner;
+        string tokenURI;
+    }
+    
+    PublicCard[] publishCards; // TokenIDs
+    // uint256[] publishCards; // TokenIDs
 
 
     mapping(address => Card) private cards;
@@ -214,12 +221,8 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @dev Iterates through the array of public card holders and returns their associated token URIs.
      * @return An array of strings containing the token URIs of all public business cards.
      */
-    function getPublicCards() public view returns(string[] memory) {
-        string[] memory result = new string[](publishCards.length);
-        for (uint i = 0; i < publishCards.length; i++) {
-            result[i] = tokenURI(publishCards[i]);
-        }
-        return result;
+    function getPublicCards() public view returns(PublicCard[] memory) {     
+        return publishCards;
     }
 
     ///////////////////////////////////////  Setters  /////////////////////////////////////////////
@@ -316,18 +319,19 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     }
 
     function deleteMyCard() public addressHaveCard(msg.sender) returns(bool){
+        //Se quema el NFT 
         super._burn(cards[msg.sender].tokenId);
-        for (uint i = 0; i < publishCards.length; i++) {
-            if (cards[msg.sender].tokenId == publishCards[i]) {
-                publishCards[i] = publishCards[publishCards.length - 1];
-                publishCards.pop();
-                break;
-            }
-        }
-        Card memory blankCard;
-        cards[msg.sender] = blankCard;
+        setVisibilityCard(false);
+        cards[msg.sender].exists = false;
         return true;
     }
+
+    function restoreMyCard() public addressNotHaveCard(msg.sender) {
+        require(cards[msg.sender].tokenId != 0, "There is no previous card record");
+        cards[msg.sender].exists = true;
+        //TODO Mintear de nuevo el NFT
+    }
+
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -339,18 +343,24 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      */
     function setVisibilityCard(bool visibility) public {
         require(cards[msg.sender].exists, "There is no Card associated with your address");
+
         if (visibility) {
             for (uint i = 0; i < publishCards.length; i++) {
-                if (cards[msg.sender].tokenId == publishCards[i]) {
-                    return;
+                // Comparar los hashes de las tokenURIs
+                if (keccak256(abi.encodePacked(tokenURI(cards[msg.sender].tokenId))) == keccak256(abi.encodePacked(publishCards[i].tokenURI))) {
+                    return; // La tarjeta ya está en la lista
                 }
             }
-            publishCards.push(cards[msg.sender].tokenId);
+            publishCards.push(PublicCard({
+                owner: msg.sender,
+                tokenURI: tokenURI(cards[msg.sender].tokenId)
+            }));
         } else {
             for (uint i = 0; i < publishCards.length; i++) {
-                if (cards[msg.sender].tokenId == publishCards[i]) {
+                // Compara los hashes de las tokenURIs
+                if (keccak256(abi.encodePacked(tokenURI(cards[msg.sender].tokenId))) == keccak256(abi.encodePacked(publishCards[i].tokenURI))) {
                     publishCards[i] = publishCards[publishCards.length - 1]; // Mover el último elemento al lugar de i
-                    publishCards.pop();
+                    publishCards.pop(); // Eliminar el último elemento
                     return;
                 }
             }
@@ -395,6 +405,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     function _safeCreateCard(string memory tokenURI_, string memory privateInfoURL, address to, uint16 companyId_) private {
         lastCardId++;
         Card memory newCard;
+        newCard.owner = to;
         newCard.tokenId = lastCardId;
         newCard.privateInfoURL = privateInfoURL;
         newCard.companyID = companyId_;
@@ -402,6 +413,10 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         cards[to] = newCard;
         _safeMint(to, lastCardId);
         _setTokenURI(lastCardId, tokenURI_);
+        PublicCard memory visibleCard;
+        visibleCard.owner = to;
+        visibleCard.tokenURI = tokenURI_;
+        publishCards.push(visibleCard); //Seteamos las Card por defecto como visible
         emit CardCreated(to,lastCardId);
     }
 
