@@ -69,6 +69,15 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     }
 
     /**
+     * @dev Ensures that the provided address does not already have a business card.
+     * @param addr_ The address to check.
+     */
+    modifier addressHaveCard(address addr_) {
+        require(cards[addr_].exists, "Address not have Card");
+        _;
+    }
+
+    /**
      * @dev Ensures that there is an established contact between two addresses.
      * The modifier checks if both addresses have a non-zero length of contacts 
      * between them, meaning they have mutually exchanged contact information.
@@ -115,6 +124,16 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         }
         return "";
     }
+
+    /**
+     * @notice Retrieves the complete business card of a specified address.
+     * @dev Requires that the address has a business card associated with it.
+     * @param owner The address of the card owner whose business card will be retrieved.
+     * @return The complete business card information of the owner.
+     */
+    function getCardByAddress(address owner) public view addressHaveCard(owner) returns(Card memory) {
+        return cards[owner];
+    }
     
     /**
      * @notice Retrieves the business card information of the caller.
@@ -139,10 +158,17 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         return contacts[msg.sender][c_].length != 0 && contacts[c_][msg.sender].length != 0 ? true : false;
     }
     
+    /**
+     * @notice Retrieves the total number of contacts associated with a given business card.
+     * @dev Requires that the address has a business card associated with it.
+     * @param card The address of the business card owner whose contact count will be retrieved.
+     * @return The total number of contacts associated with the given business card.
+     */
     function getContactQtyByOwner(address card) public view returns(uint32) {
         require(cards[card].exists, "The address provided does not have any associated card.");
         return cards[card].numberOfContacts;
     }
+
     /**
      * @notice Get the ID of the company associated with the sender.
      * @dev Only callable by registered companies.
@@ -287,6 +313,20 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      */
     function safeTransferFrom(address, address, uint256, bytes memory) public pure override(IERC721, ERC721) {
         revert("NFTs are non-transferable");
+    }
+
+    function deleteMyCard() public addressHaveCard(msg.sender) returns(bool){
+        super._burn(cards[msg.sender].tokenId);
+        Card memory blankCard;
+        cards[msg.sender] = blankCard;
+        for (uint i = 0; i < publishCards.length; i++) {
+            if (cards[msg.sender].tokenId == publishCards[i]) {
+                publishCards[i] = publishCards[publishCards.length - 1];
+                publishCards.pop();
+                break;
+            }
+        }
+        return true;
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////
