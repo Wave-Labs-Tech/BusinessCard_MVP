@@ -12,7 +12,9 @@ import { Connection } from "./models/Connection.sol";
 import { ConnectionType } from "./enums/ConnectionType.sol";
 import { Id } from "./models/Id.sol";
 import { PrivateInfoCard } from "./models/PrivateInfoCard.sol";
+import { PublicCard } from "./models/PublicCard.sol";
 import { PublicInfoCard } from "./models/PublicInfoCard.sol";
+
 
 
 /**
@@ -41,12 +43,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
     uint16 lastCompanyId;
     uint256 public lastCardId;
     uint256 feeCreateCompany;
-    ///// Pasar a un modelo aparte /////////
-    struct PublicCard {
-        address owner;
-        string tokenURI;
-    }
-    
+
     PublicCard[] publishCards; // TokenIDs
     // uint256[] publishCards; // TokenIDs
 
@@ -171,7 +168,7 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
      * @param card The address of the business card owner whose contact count will be retrieved.
      * @return The total number of contacts associated with the given business card.
      */
-    function getContactQtyByOwner(address card) public view returns(uint32) {
+    function getContactsQtyByOwner(address card) public view returns(uint32) {
         require(cards[card].exists, "The address provided does not have any associated card.");
         return cards[card].numberOfContacts;
     }
@@ -318,18 +315,30 @@ contract BusinessCard is ERC721, Ownable, ERC721URIStorage {
         revert("NFTs are non-transferable");
     }
 
-    function deleteMyCard() public addressHaveCard(msg.sender) returns(bool){
-        //Se quema el NFT 
+    /**
+     * @notice Deletes the business card associated with the caller's address.
+     * @dev Burns the NFT representing the business card and sets the card's visibility to false. 
+     * Marks the card as non-existent by setting the `exists` field to false.
+     * The function will only execute if the caller currently has a business card associated with their address.
+     * @return bool Returns true if the card was successfully deleted.
+     */
+    function deleteMyCard() public addressHaveCard(msg.sender) returns(bool) {
         super._burn(cards[msg.sender].tokenId);
         setVisibilityCard(false);
         cards[msg.sender].exists = false;
         return true;
     }
 
+    /**
+     * @notice Restores the business card associated with the caller's address.
+     * @dev Reactivates the business card by setting the `exists` field to true.
+     * Requires that a previous card record exists for the caller's address.
+     * The function will only execute if the caller currently does not have an active business card.
+     */
     function restoreMyCard() public addressNotHaveCard(msg.sender) {
         require(cards[msg.sender].tokenId != 0, "There is no previous card record");
         cards[msg.sender].exists = true;
-        //TODO Mintear de nuevo el NFT
+        //TODO Mintear de nuevo el NFT... Es necesario un nuevo CID
     }
 
 
